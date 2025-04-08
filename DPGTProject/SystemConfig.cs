@@ -27,7 +27,8 @@ namespace DPGTProject
             ["Sample"] = "Пример_названий_в_combobox1",
             ["Sample1"] = "Пример_названий_в_combobox2", 
             ["Sample2"] = "Пример_названий_в_combobox3",
-            ["Sample3"] = "Пример_названий_в_combobox4"
+            ["Sample3"] = "Пример_названий_в_combobox4",
+            ["Users"] = "Пользователи" // Строку не трогать, она нужна для перевода
         };
 
         public static string TranslateComboBox(string value)

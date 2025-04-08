@@ -21,7 +21,7 @@ namespace DPGTProject
             // Здесь названия таблиц, которые необходимо использовать, названия брать из БД, пример заполнения выше
             tables = null;
             if (tables == null || tables.Length == 0) throw new NullReferenceException("Заполните список отображаемых таблиц!");
-            if (UserConfig.userRole == "Администратор") table_cb.Items.Add("Users");
+            if (UserConfig.userRole == "Администратор") tables = tables.Append("Users").ToArray();
             table_cb.Items.AddRange(tables.Select(t => SystemConfig.TranslateComboBox(t)).ToArray());
         }
 

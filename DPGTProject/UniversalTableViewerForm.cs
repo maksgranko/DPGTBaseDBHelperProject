@@ -8,7 +8,9 @@ namespace DPGTProject
     public partial class UniversalTableViewerForm : Form
     {
         private string _tableName;
+        private string _currentFilter = string.Empty;
         private DataTable _originalData;
+        private DataTable _filteredData;
         private List<DataGridViewCell> _searchResults = new List<DataGridViewCell>();
         private int _currentSearchIndex = -1;
 
@@ -166,5 +168,61 @@ namespace DPGTProject
             dataGridView1.Rows[cell.RowIndex].Selected = true;
             dataGridView1.FirstDisplayedScrollingRowIndex = cell.RowIndex;
         }
+
+        //private void Filter_tb_KeyDown(object sender, KeyEventArgs e)
+        //{
+        //    if (e.KeyCode == Keys.Enter)
+        //    {
+        //ApplyFilter(filter_tb.Text);
+        //    }
+        //}
+        private void ApplyFilter(string filterText)
+        {
+            if (_originalData == null) return;
+            if (filterText == null) { LoadData(); }
+            _currentFilter = filterText;
+            if (string.IsNullOrEmpty(filterText))
+            {
+                _filteredData = _originalData.Copy();
+            }
+            else
+            {
+                var filterExpression = string.Empty;
+                foreach (DataColumn column in _originalData.Columns)
+                {
+                    if (filterExpression.Length > 0) filterExpression += " OR ";
+
+                    if (column.DataType == typeof(string))
+                    {
+                        filterExpression += $"{column.ColumnName} LIKE '%{filterText}%'";
+                    }
+                    else if (column.DataType == typeof(int) || column.DataType == typeof(decimal))
+                    {
+                        if (int.TryParse(filterText, out _) || decimal.TryParse(filterText, out _))
+                        {
+                            filterExpression += $"{column.ColumnName} = {filterText}";
+                        }
+                    }
+                    else if (column.DataType == typeof(DateTime))
+                    {
+                        if (DateTime.TryParse(filterText, out _))
+                        {
+                            filterExpression += $"{column.ColumnName} = #{filterText}#";
+                        }
+                    }
+                }
+
+                _filteredData = _originalData.Clone();
+                var rows = _originalData.Select(filterExpression);
+                foreach (var row in rows)
+                {
+                    _filteredData.ImportRow(row);
+                }
+            }
+
+            dataGridView1.DataSource = Database.Translate(_filteredData, TableName);
+            statusLabel.Text = $"Отфильтровано записей: {_filteredData.Rows.Count}";
+        }
+
     }
 }
