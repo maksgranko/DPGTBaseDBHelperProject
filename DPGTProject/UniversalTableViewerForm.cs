@@ -169,13 +169,14 @@ namespace DPGTProject
             dataGridView1.FirstDisplayedScrollingRowIndex = cell.RowIndex;
         }
 
-        //private void Filter_tb_KeyDown(object sender, KeyEventArgs e)
-        //{
-        //    if (e.KeyCode == Keys.Enter)
-        //    {
-        //ApplyFilter(filter_tb.Text);
-        //    }
-        //}
+        private void Filter_tb_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                ApplyFilter(filter_tb.Text);
+            }
+        }
+
         private void ApplyFilter(string filterText)
         {
             if (_originalData == null) return;

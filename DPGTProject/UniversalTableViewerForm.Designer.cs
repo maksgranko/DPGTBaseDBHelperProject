@@ -15,7 +15,6 @@ namespace DPGTProject
 
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(UniversalTableViewerForm));
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.save_btn = new System.Windows.Forms.ToolStripButton();
@@ -31,6 +30,9 @@ namespace DPGTProject
             this.help_btn = new System.Windows.Forms.ToolStripButton();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.filter_tb = new System.Windows.Forms.ToolStripTextBox();
+            this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -41,7 +43,7 @@ namespace DPGTProject
             this.dataGridView1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dataGridView1.Location = new System.Drawing.Point(0, 25);
             this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(575, 270);
+            this.dataGridView1.Size = new System.Drawing.Size(691, 367);
             this.dataGridView1.TabIndex = 0;
             // 
             // toolStrip1
@@ -56,11 +58,14 @@ namespace DPGTProject
             this.find_tb,
             this.find_next_btn,
             this.find_previous_btn,
+            this.toolStripSeparator4,
+            this.toolStripLabel2,
+            this.filter_tb,
             this.toolStripSeparator2,
             this.help_btn});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(575, 25);
+            this.toolStrip1.Size = new System.Drawing.Size(691, 25);
             this.toolStrip1.TabIndex = 1;
             // 
             // save_btn
@@ -139,9 +144,9 @@ namespace DPGTProject
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.statusLabel});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 295);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 392);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(575, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(691, 22);
             this.statusStrip1.TabIndex = 2;
             // 
             // statusLabel
@@ -149,9 +154,29 @@ namespace DPGTProject
             this.statusLabel.Name = "statusLabel";
             this.statusLabel.Size = new System.Drawing.Size(0, 17);
             // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            this.toolStripSeparator4.Size = new System.Drawing.Size(6, 25);
+            // 
+            // filter_tb
+            // 
+            this.filter_tb.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.filter_tb.Name = "filter_tb";
+            this.filter_tb.Size = new System.Drawing.Size(100, 25);
+            this.filter_tb.Visible = false;
+            this.filter_tb.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Filter_tb_KeyDown);
+            // 
+            // toolStripLabel2
+            // 
+            this.toolStripLabel2.Name = "toolStripLabel2";
+            this.toolStripLabel2.Size = new System.Drawing.Size(51, 22);
+            this.toolStripLabel2.Text = "Фильтр:";
+            this.toolStripLabel2.Visible = false;
+            // 
             // UniversalTableViewerForm
             // 
-            this.ClientSize = new System.Drawing.Size(575, 317);
+            this.ClientSize = new System.Drawing.Size(691, 414);
             this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.statusStrip1);
@@ -182,5 +207,8 @@ namespace DPGTProject
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.ToolStripButton help_btn;
         private System.Windows.Forms.ToolStripButton find_next_btn;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
+        private System.Windows.Forms.ToolStripLabel toolStripLabel2;
+        private System.Windows.Forms.ToolStripTextBox filter_tb;
     }
 }
