@@ -244,6 +244,7 @@ namespace DPGTProject
                 }
                 return dt;
         }
+
         internal static void PreCheck()
         {
             if (!Database.CheckConnection())
