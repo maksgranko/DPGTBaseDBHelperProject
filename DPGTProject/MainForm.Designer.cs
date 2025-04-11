@@ -20,7 +20,6 @@
 
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.exit_btn = new System.Windows.Forms.Button();
             this.dev_btn = new System.Windows.Forms.Button();
             this.unlogin_btn = new System.Windows.Forms.Button();
@@ -29,6 +28,7 @@
             this.open_table_btn = new System.Windows.Forms.Button();
             this.gen_btn = new System.Windows.Forms.Button();
             this.table_cb = new System.Windows.Forms.ComboBox();
+            this.import_btn = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // exit_btn
@@ -104,11 +104,21 @@
             this.table_cb.Size = new System.Drawing.Size(167, 21);
             this.table_cb.TabIndex = 15;
             // 
+            // import_btn
+            // 
+            this.import_btn.Location = new System.Drawing.Point(12, 93);
+            this.import_btn.Name = "import_btn";
+            this.import_btn.Size = new System.Drawing.Size(274, 23);
+            this.import_btn.TabIndex = 17;
+            this.import_btn.Text = "Импорт данных";
+            this.import_btn.Click += new System.EventHandler(this.import_btn_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(298, 382);
+            this.Controls.Add(this.import_btn);
             this.Controls.Add(this.table_cb);
             this.Controls.Add(this.gen_btn);
             this.Controls.Add(this.open_table_btn);
@@ -130,5 +140,6 @@
         private System.Windows.Forms.Button open_table_btn;
         private System.Windows.Forms.Button gen_btn;
         private System.Windows.Forms.ComboBox table_cb;
+        private System.Windows.Forms.Button import_btn;
     }
 }

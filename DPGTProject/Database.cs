@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
@@ -245,6 +246,79 @@ namespace DPGTProject
                 return dt;
         }
 
+        public static string[] GetTableColumns(string tableName)
+        {
+            DataTable dt = new DataTable();
+            using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
+            {
+                string query = @"
+                    SELECT COLUMN_NAME 
+                    FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_NAME = @TableName
+                    ORDER BY ORDINAL_POSITION";
+
+                SqlDataAdapter da = new SqlDataAdapter(query, conn);
+                da.SelectCommand.Parameters.AddWithValue("@TableName", tableName);
+                da.Fill(dt);
+            }
+            return dt.Rows.Cast<DataRow>().Select(r => r[0].ToString()).ToArray();
+        }
+
+        public static Dictionary<string, string> GetTableSchema(string tableName)
+        {
+            var schema = new Dictionary<string, string>();
+            using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
+            {
+                string query = @"
+                    SELECT 
+                        COLUMN_NAME, 
+                        DATA_TYPE 
+                    FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_NAME = @TableName";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@TableName", tableName);
+                conn.Open();
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        schema[reader["COLUMN_NAME"].ToString()] =
+                            reader["DATA_TYPE"].ToString();
+                    }
+                }
+            }
+            return schema;
+        }
+
+        public static int ImportData(string tableName, DataTable data)
+        {
+            using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
+            {
+                conn.Open();
+                using (SqlBulkCopy bulkCopy = new SqlBulkCopy(conn))
+                {
+                    bulkCopy.DestinationTableName = tableName;
+
+                    try
+                    {
+                        // Сопоставление столбцов
+                        foreach (DataColumn column in data.Columns)
+                        {
+                            bulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);
+                        }
+
+                        bulkCopy.WriteToServer(data);
+                        return data.Rows.Count;
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Ошибка импорта в таблицу {tableName}: {ex.Message}");
+                    }
+                }
+            }
+        }
         internal static void PreCheck()
         {
             if (!Database.CheckConnection())

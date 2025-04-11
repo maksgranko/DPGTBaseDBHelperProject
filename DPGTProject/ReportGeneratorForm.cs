@@ -22,71 +22,9 @@ namespace DPGTProject
         {
             InitializeComponent();
             this.reportTypeComboBox.Items.AddRange(new object[] {
+            // Здесь задаются названия репортов
             "Отчёт 1",
             "Отчёт 2"});
-        }
-
-        private DataGridView dataGridView1;
-        private ComboBox reportTypeComboBox;
-        private Button generate_btn;
-        private Button export_btn;
-
-        private void InitializeComponent()
-        {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ReportGeneratorForm));
-            this.dataGridView1 = new System.Windows.Forms.DataGridView();
-            this.reportTypeComboBox = new System.Windows.Forms.ComboBox();
-            this.generate_btn = new System.Windows.Forms.Button();
-            this.export_btn = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
-            this.SuspendLayout();
-            // 
-            // dataGridView1
-            // 
-            this.dataGridView1.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.dataGridView1.Location = new System.Drawing.Point(0, 100);
-            this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(500, 300);
-            this.dataGridView1.TabIndex = 0;
-            // 
-            // reportTypeComboBox
-            // 
-            this.reportTypeComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.reportTypeComboBox.Location = new System.Drawing.Point(10, 10);
-            this.reportTypeComboBox.Name = "reportTypeComboBox";
-            this.reportTypeComboBox.Size = new System.Drawing.Size(200, 21);
-            this.reportTypeComboBox.TabIndex = 1;
-            // 
-            // generate_btn
-            // 
-            this.generate_btn.Location = new System.Drawing.Point(12, 37);
-            this.generate_btn.Name = "generate_btn";
-            this.generate_btn.Size = new System.Drawing.Size(117, 23);
-            this.generate_btn.TabIndex = 2;
-            this.generate_btn.Text = "Сформировать";
-            this.generate_btn.Click += new System.EventHandler(this.GenerateReport);
-            // 
-            // export_btn
-            // 
-            this.export_btn.Location = new System.Drawing.Point(135, 37);
-            this.export_btn.Name = "export_btn";
-            this.export_btn.Size = new System.Drawing.Size(75, 23);
-            this.export_btn.TabIndex = 3;
-            this.export_btn.Text = "Экспорт";
-            this.export_btn.Click += new System.EventHandler(this.ExportReport);
-            // 
-            // ReportGeneratorForm
-            // 
-            this.ClientSize = new System.Drawing.Size(500, 400);
-            this.Controls.Add(this.dataGridView1);
-            this.Controls.Add(this.reportTypeComboBox);
-            this.Controls.Add(this.generate_btn);
-            this.Controls.Add(this.export_btn);
-            this.Name = "ReportGeneratorForm";
-            this.Text = "Генератор отчётов";
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
-            this.ResumeLayout(false);
-
         }
         private void GenerateReport(object sender, EventArgs e)
         {
@@ -95,20 +33,25 @@ namespace DPGTProject
                 DataTable reportData = null;
                 switch (reportTypeComboBox.SelectedItem?.ToString())
                 {
+#pragma warning disable CS0162
+                    // Здесь алгоритм репортов.
                     case "Отчёт 1":
-                        reportData = Database.Translate(reportData, "Пример 1");
+                        reportData = Database.Translate(reportData, "Пример 1"); // как переводить колоны у таблиц
+                        throw new Exception("Задайте корректный алгоритм репорта!");
                         break;
                     case "Отчёт 2":
-                        reportData = Database.Translate(reportData, "Пример 2");
+                        reportData = Database.Translate(reportData, "Пример 2"); // как переводить колоны у таблиц
+                        throw new Exception("Задайте корректный алгоритм репорта!");
                         break;
                     default:
                         MessageBox.Show("Пожалуйста, выберите тип отчёта из списка", 
                             "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                 }
-                if(reportData == null) throw new NullReferenceException("Нет данных для отображения!");
+                if (reportData == null) throw new NullReferenceException("Нет данных для отображения!");
                 _translatedData = reportData;
                 dataGridView1.DataSource = _translatedData;
+#pragma warning restore CS0162
             }
             catch (Exception ex)
             {

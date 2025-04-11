@@ -17,9 +17,8 @@ namespace DPGTProject
             hello_lb.Text = "Здравствуй, " + UserConfig.userLogin + "!";
             role_lb.Text = "Ваша роль: " + UserConfig.userRole;
 
-            //tables = new string[] { "Documents", "DocumentHistory", "Fines", "Owners", "Violations" };
-            // Здесь названия таблиц, которые необходимо использовать, названия брать из БД, пример заполнения выше
-            tables = null;
+            // В SystemConfig.cs переменная tables содержит названия таблиц, которые необходимо использовать, названия брать из БД, пример заполнения выше
+            tables = SystemConfig.tables;
             if (tables == null || tables.Length == 0) throw new NullReferenceException("Заполните список отображаемых таблиц!");
             if (UserConfig.userRole == "Администратор") tables = tables.Append("Users").ToArray();
             table_cb.Items.AddRange(tables.Select(t => SystemConfig.TranslateComboBox(t)).ToArray());
@@ -80,6 +79,20 @@ namespace DPGTProject
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка при открытии отчётов: {ex.Message}", "Ошибка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void import_btn_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var form = new DataImportForm();
+                form.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при открытии импорта: {ex.Message}", "Ошибка",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

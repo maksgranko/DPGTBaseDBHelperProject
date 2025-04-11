@@ -11,6 +11,9 @@ namespace DPGTProject
         public static string connectionString = $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
         public static Point LastLocation = new Point(400, 300);
         public static string lastError = "";
+        //Пример заполнения:
+        //tables = new string[] { "Documents", "DocumentHistory", "Fines", "Owners", "Violations" };
+        public static string[] tables;
         public static Dictionary<string, Dictionary<string, string>> ColumnTranslations = new Dictionary<string, Dictionary<string, string>>()
         {
             ["Owners"] = new Dictionary<string, string>()
