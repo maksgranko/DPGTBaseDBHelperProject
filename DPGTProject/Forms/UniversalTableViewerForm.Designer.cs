@@ -22,19 +22,19 @@ namespace DPGTProject
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.removerow_btn = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
+            this.find_label = new System.Windows.Forms.ToolStripLabel();
             this.find_tb = new System.Windows.Forms.ToolStripTextBox();
             this.find_next_btn = new System.Windows.Forms.ToolStripButton();
             this.find_previous_btn = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
+            this.filter_label = new System.Windows.Forms.ToolStripLabel();
             this.filter_tb = new System.Windows.Forms.ToolStripTextBox();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.help_btn = new System.Windows.Forms.ToolStripButton();
-            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.exit_btn = new System.Windows.Forms.ToolStripButton();
+            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+            this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -56,12 +56,12 @@ namespace DPGTProject
             this.toolStripSeparator3,
             this.removerow_btn,
             this.toolStripSeparator1,
-            this.toolStripLabel1,
+            this.find_label,
             this.find_tb,
             this.find_next_btn,
             this.find_previous_btn,
             this.toolStripSeparator4,
-            this.toolStripLabel2,
+            this.filter_label,
             this.filter_tb,
             this.toolStripSeparator2,
             this.help_btn,
@@ -103,11 +103,11 @@ namespace DPGTProject
             this.toolStripSeparator1.Name = "toolStripSeparator1";
             this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
             // 
-            // toolStripLabel1
+            // find_label
             // 
-            this.toolStripLabel1.Name = "toolStripLabel1";
-            this.toolStripLabel1.Size = new System.Drawing.Size(44, 22);
-            this.toolStripLabel1.Text = "Найти:";
+            this.find_label.Name = "find_label";
+            this.find_label.Size = new System.Drawing.Size(44, 22);
+            this.find_label.Text = "Найти:";
             // 
             // find_tb
             // 
@@ -137,19 +137,17 @@ namespace DPGTProject
             this.toolStripSeparator4.Name = "toolStripSeparator4";
             this.toolStripSeparator4.Size = new System.Drawing.Size(6, 25);
             // 
-            // toolStripLabel2
+            // filter_label
             // 
-            this.toolStripLabel2.Name = "toolStripLabel2";
-            this.toolStripLabel2.Size = new System.Drawing.Size(51, 22);
-            this.toolStripLabel2.Text = "Фильтр:";
-            this.toolStripLabel2.Visible = false;
+            this.filter_label.Name = "filter_label";
+            this.filter_label.Size = new System.Drawing.Size(51, 22);
+            this.filter_label.Text = "Фильтр:";
             // 
             // filter_tb
             // 
             this.filter_tb.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.filter_tb.Name = "filter_tb";
             this.filter_tb.Size = new System.Drawing.Size(100, 25);
-            this.filter_tb.Visible = false;
             this.filter_tb.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Filter_tb_KeyDown);
             // 
             // toolStripSeparator2
@@ -164,20 +162,6 @@ namespace DPGTProject
             this.help_btn.Text = "Справка";
             this.help_btn.Click += new System.EventHandler(this.help_btn_Click);
             // 
-            // statusStrip1
-            // 
-            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.statusLabel});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 392);
-            this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(821, 22);
-            this.statusStrip1.TabIndex = 2;
-            // 
-            // statusLabel
-            // 
-            this.statusLabel.Name = "statusLabel";
-            this.statusLabel.Size = new System.Drawing.Size(0, 17);
-            // 
             // toolStripSeparator5
             // 
             this.toolStripSeparator5.Name = "toolStripSeparator5";
@@ -191,6 +175,20 @@ namespace DPGTProject
             this.exit_btn.Size = new System.Drawing.Size(46, 22);
             this.exit_btn.Text = "Выход";
             this.exit_btn.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
+            // 
+            // statusStrip1
+            // 
+            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.statusLabel});
+            this.statusStrip1.Location = new System.Drawing.Point(0, 392);
+            this.statusStrip1.Name = "statusStrip1";
+            this.statusStrip1.Size = new System.Drawing.Size(821, 22);
+            this.statusStrip1.TabIndex = 2;
+            // 
+            // statusLabel
+            // 
+            this.statusLabel.Name = "statusLabel";
+            this.statusLabel.Size = new System.Drawing.Size(0, 17);
             // 
             // UniversalTableViewerForm
             // 
@@ -220,13 +218,13 @@ namespace DPGTProject
         private System.Windows.Forms.ToolStripButton removerow_btn;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
-        private System.Windows.Forms.ToolStripLabel toolStripLabel1;
+        private System.Windows.Forms.ToolStripLabel find_label;
         private System.Windows.Forms.ToolStripTextBox find_tb;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
         private System.Windows.Forms.ToolStripButton help_btn;
         private System.Windows.Forms.ToolStripButton find_next_btn;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
-        private System.Windows.Forms.ToolStripLabel toolStripLabel2;
+        private System.Windows.Forms.ToolStripLabel filter_label;
         private System.Windows.Forms.ToolStripTextBox filter_tb;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
         private System.Windows.Forms.ToolStripButton exit_btn;

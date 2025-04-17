@@ -29,6 +29,20 @@ namespace DPGTProject
         {
             InitializeComponent();
             dataGridView1.DataError += DataGridView1_DataError;
+            if (!SystemConfig.enableFilter)
+            {
+                toolStripSeparator2.Visible = false;
+                filter_label.Visible = false;
+                filter_tb.Visible = false;
+            }
+            if (!SystemConfig.enableSearch)
+            {
+                toolStripSeparator4.Visible = false;
+                find_label.Visible = false;
+                find_next_btn.Visible = false;
+                find_previous_btn.Visible = false;
+                find_tb.Visible = false;
+            }
         }
 
         private void DataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
@@ -37,7 +51,7 @@ namespace DPGTProject
             {
                 throw e.Exception;
             }
-            catch (FormatException ex) 
+            catch (FormatException ex)
             {
                 SystemConfig.lastError = ex.ToString();
             }
@@ -92,7 +106,7 @@ namespace DPGTProject
 
         private void removerow_btn_Click(object sender, EventArgs e)
         {
-            if (dataGridView1.SelectedRows.Count == 0) { MessageBox.Show("Выберите один или более колон!","Ошибка!",MessageBoxButtons.OK,MessageBoxIcon.Error); return; }
+            if (dataGridView1.SelectedRows.Count == 0) { MessageBox.Show("Выберите один или более колон!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
             if (MessageBox.Show("Вы точно желаете удалить запись(и)?", "Внимание!", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.No) { return; }
             for (int i = dataGridView1.SelectedRows.Count - 1; i >= 0; i--)
             {
@@ -116,7 +130,7 @@ namespace DPGTProject
         {
             SearchAllColumns();
             if (_searchResults.Count == 0) return;
-            
+
             _currentSearchIndex = (_currentSearchIndex + 1) % _searchResults.Count;
             NavigateToResult();
         }
@@ -125,7 +139,7 @@ namespace DPGTProject
         {
             SearchAllColumns();
             if (_searchResults.Count == 0) return;
-            
+
             _currentSearchIndex = (_currentSearchIndex - 1 + _searchResults.Count) % _searchResults.Count;
             NavigateToResult();
         }

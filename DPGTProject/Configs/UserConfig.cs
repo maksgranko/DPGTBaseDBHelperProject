@@ -4,7 +4,7 @@
     {
         public static string userLogin = "";
         public static string userRole = "";
-
+        
         public static void Logout()
         {
             userLogin = "";

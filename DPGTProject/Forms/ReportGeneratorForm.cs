@@ -51,8 +51,7 @@ namespace DPGTProject
 
                 if (radioNormalTable.Checked)
                 {
-                    string tableName = SystemConfig.UntranslateComboBox(
-                        reportTypeComboBox.SelectedItem?.ToString());
+                    string tableName = SystemConfig.UntranslateComboBox(reportTypeComboBox.SelectedItem?.ToString());
                     reportData = Database.GetTableData(tableName);
                     reportData = Database.Translate(reportData, tableName);
                 }

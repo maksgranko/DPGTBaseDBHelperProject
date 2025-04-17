@@ -95,6 +95,11 @@ namespace DPGTProject
         public static string ConnectionStringBuilder(string databaseName)
         {
             return $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
+            //Иногда работают следующие варианты:
+            //return $"Data Source={Environment.MachineName}\\SQLEXPRESS;Initial Catalog={databaseName};Integrated Security=True;Encrypt=False;TrustServerCertificate=True";
+            //return $"Data Source={Environment.MachineName}\\SQLEXPRESS;Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
+            // Значение по умолчанию:
+            //return $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
         }
         public static DataTable Translate(DataTable dt, string tableName)
         {
@@ -363,6 +368,26 @@ namespace DPGTProject
             {
                 MessageBox.Show($"Ошибка заполнения DataGridView: {ex.Message}");
             }
+        }
+        public static string[] GetTables(bool includeSystemTables = false)
+        {
+            DataTable dt = new DataTable();
+            using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
+            {
+                string query = @"SELECT TABLE_NAME 
+                                FROM INFORMATION_SCHEMA.TABLES
+                                WHERE TABLE_TYPE = 'BASE TABLE'";
+
+                if (!includeSystemTables)
+                {
+                    query += " AND TABLE_CATALOG = @DatabaseName";
+                }
+
+                SqlDataAdapter da = new SqlDataAdapter(query, conn);
+                da.SelectCommand.Parameters.AddWithValue("@DatabaseName", SystemConfig.databaseName);
+                da.Fill(dt);
+            }
+            return dt.Rows.Cast<DataRow>().Select(r => r[0].ToString()).ToArray();
         }
         internal static void PreCheck()
         {

@@ -12,6 +12,7 @@ namespace DPGTProject
         static void Main()
         {
             Test.Init(); // Инициирует тестовые данные для проекта. Убрать, если не используется(вне разработки)
+            SystemConfig.Initialize();
             Database.PreCheck();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

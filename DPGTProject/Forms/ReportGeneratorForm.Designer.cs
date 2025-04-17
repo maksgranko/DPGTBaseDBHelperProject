@@ -43,7 +43,7 @@ namespace DPGTProject
             this.dataGridView1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.dataGridView1.Location = new System.Drawing.Point(0, 88);
             this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(500, 312);
+            this.dataGridView1.Size = new System.Drawing.Size(536, 312);
             this.dataGridView1.TabIndex = 0;
             // 
             // radioPredefinedReport
@@ -108,7 +108,7 @@ namespace DPGTProject
             // 
             // ReportGeneratorForm
             // 
-            this.ClientSize = new System.Drawing.Size(500, 400);
+            this.ClientSize = new System.Drawing.Size(536, 400);
             this.Controls.Add(this.radioPredefinedReport);
             this.Controls.Add(this.radioNormalTable);
             this.Controls.Add(this.exit_btn);
@@ -116,6 +116,8 @@ namespace DPGTProject
             this.Controls.Add(this.reportTypeComboBox);
             this.Controls.Add(this.generate_btn);
             this.Controls.Add(this.export_btn);
+            this.MaximumSize = new System.Drawing.Size(900, 439);
+            this.MinimumSize = new System.Drawing.Size(397, 439);
             this.Name = "ReportGeneratorForm";
             this.Text = "Генератор отчётов";
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
