@@ -129,6 +129,7 @@
       <DependentUpon>ReportGeneratorForm.cs</DependentUpon>
     </Compile>
     <Compile Include="SystemConfig.cs" />
+    <Compile Include="Test.cs" />
     <Compile Include="UniversalTableViewerForm.cs">
       <SubType>Form</SubType>
     </Compile>

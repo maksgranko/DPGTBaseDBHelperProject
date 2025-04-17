@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Data.Common;
-using System.Data.OleDb;
 using System.Windows.Forms;
 
 namespace DPGTProject
@@ -13,6 +11,7 @@ namespace DPGTProject
         [STAThread]
         static void Main()
         {
+            Test.Init(); // Инициирует тестовые данные для проекта. Убрать, если не используется(вне разработки)
             Database.PreCheck();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

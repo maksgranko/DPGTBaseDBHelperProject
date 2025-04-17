@@ -8,6 +8,7 @@ namespace DPGTProject
         public RegisterForm()
         {
             InitializeComponent();
+            this.roles_cb.Items.AddRange(SystemConfig.roles);
         }
 
         private void register_btn_Click(object sender, EventArgs e)

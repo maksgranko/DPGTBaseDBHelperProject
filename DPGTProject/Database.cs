@@ -235,7 +235,7 @@ namespace DPGTProject
             conn.Open();
             return cmd.ExecuteReader(CommandBehavior.CloseConnection);
         }
-        internal static DataTable GetAll(string tableName)
+        public static DataTable GetAll(string tableName)
         {
             DataTable dt = new DataTable();
             using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
@@ -244,6 +244,10 @@ namespace DPGTProject
                 da.Fill(dt);
             }
             return dt;
+        }
+        public static DataTable GetTableData(string tableName)
+        {
+            return GetAll(tableName);
         }
         public static string[] GetTableColumns(string tableName)
         {
@@ -333,7 +337,6 @@ namespace DPGTProject
                 return false;
             }
         }
-
         public static DataTable GetDataTableFromSQL(string SQLRequest)
         {
             try
@@ -350,7 +353,6 @@ namespace DPGTProject
                 return null;
             }
         }
-
         public static void FillDataGridViewFromSQL(DataGridView dgv, string SQLRequest)
         {
             try
@@ -362,7 +364,6 @@ namespace DPGTProject
                 MessageBox.Show($"Ошибка заполнения DataGridView: {ex.Message}");
             }
         }
-
         internal static void PreCheck()
         {
             if (!Database.CheckConnection())

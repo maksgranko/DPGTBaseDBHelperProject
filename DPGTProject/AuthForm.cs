@@ -8,6 +8,11 @@ namespace DPGTProject
         public AuthForm()
         {
             InitializeComponent();
+            if (Test.Initialized)
+            {
+                login_tb.Text = "www";
+                password_tb.Text = "TestData1234@";
+            }
         }
 
         private void dev_btn_Click(object sender, EventArgs e)

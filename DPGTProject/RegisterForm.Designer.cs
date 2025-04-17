@@ -164,9 +164,6 @@
             // roles_cb
             // 
             this.roles_cb.FormattingEnabled = true;
-            this.roles_cb.Items.AddRange(new object[] {
-            "Администратор",
-            "Менеджер"});
             this.roles_cb.Location = new System.Drawing.Point(139, 172);
             this.roles_cb.Name = "roles_cb";
             this.roles_cb.Size = new System.Drawing.Size(161, 21);

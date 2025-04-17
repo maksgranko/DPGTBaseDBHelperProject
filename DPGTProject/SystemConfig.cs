@@ -9,14 +9,18 @@ namespace DPGTProject
     {
         public static string databaseName = "";
         public static string connectionString = $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
+        // !!! ЕСЛИ ВЫ ПОМЕНЯЛИ ЭТО ЗДЕСЬ, ПОМЕНЯЙТЕ ТАКЖЕ НА ПОДОБНОЕ В Database.cs МЕТОД: ConnectionStringBuilder !!!
         //Иногда работают следующие варианты:
         //public static string connectionString = $"Data Source={Environment.MachineName}\\SQLEXPRESS;Initial Catalog={databaseName};Integrated Security=True;Encrypt=False;TrustServerCertificate=True";
         //public static string connectionString = $"Data Source={Environment.MachineName}\\SQLEXPRESS;Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
+
         public static Point LastLocation = new Point(400, 300);
         public static string lastError = "";
         //Пример заполнения:
         //tables = new string[] { "Documents", "DocumentHistory", "Fines", "Owners", "Violations" };
         public static string[] tables = new string[] { };
+        public static string[] roles = new string[] { "Администратор", "Менеджер" };
+
         public static Dictionary<string, Dictionary<string, string>> ColumnTranslations = new Dictionary<string, Dictionary<string, string>>()
         {
             ["Owners"] = new Dictionary<string, string>()
@@ -43,7 +47,6 @@ namespace DPGTProject
                 ? translation
                 : value;
         }
-
         public static string UntranslateComboBox(string value)
         {
             return TableTranslations.FirstOrDefault(x => x.Value == value).Key ?? value;

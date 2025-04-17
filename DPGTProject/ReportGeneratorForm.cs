@@ -12,6 +12,8 @@ namespace DPGTProject
     public partial class ReportGeneratorForm : Form
     {
         private DataTable _translatedData;
+        private System.Windows.Forms.RadioButton radioPredefinedReport;
+        private System.Windows.Forms.RadioButton radioNormalTable;
 
         public ReportGeneratorForm(string[] ReportsNames)
         {
@@ -21,37 +23,62 @@ namespace DPGTProject
         public ReportGeneratorForm()
         {
             InitializeComponent();
-            this.reportTypeComboBox.Items.AddRange(new object[] {
-            // Здесь задаются названия репортов
-            "Отчёт 1",
-            "Отчёт 2"});
+            ReportTypeChanged(null, null);
+        }
+
+        private void ReportTypeChanged(object sender, EventArgs e)
+        {
+            reportTypeComboBox.Items.Clear();
+
+            if (radioPredefinedReport.Checked)
+            {
+                reportTypeComboBox.Items.AddRange(new object[] {
+                    "Отчёт 1",
+                    "Отчёт 2"});
+            }
+            else
+            {
+                reportTypeComboBox.Items.AddRange(SystemConfig.tables
+                    .Select(t => SystemConfig.TranslateComboBox(t))
+                    .ToArray());
+            }
         }
         private void GenerateReport(object sender, EventArgs e)
         {
             try
             {
                 DataTable reportData = null;
-                switch (reportTypeComboBox.SelectedItem?.ToString())
+
+                if (radioNormalTable.Checked)
                 {
-#pragma warning disable CS0162
-                    // Здесь алгоритм репортов.
-                    case "Отчёт 1":
-                        reportData = Database.Translate(reportData, "Пример 1"); // как переводить колоны у таблиц
-                        throw new Exception("Задайте корректный алгоритм репорта!");
-                        break;
-                    case "Отчёт 2":
-                        reportData = Database.Translate(reportData, "Пример 2"); // как переводить колоны у таблиц
-                        throw new Exception("Задайте корректный алгоритм репорта!");
-                        break;
-                    default:
-                        MessageBox.Show("Пожалуйста, выберите тип отчёта из списка",
-                            "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
+                    string tableName = SystemConfig.UntranslateComboBox(
+                        reportTypeComboBox.SelectedItem?.ToString());
+                    reportData = Database.GetTableData(tableName);
+                    reportData = Database.Translate(reportData, tableName);
                 }
-                if (reportData == null) throw new NullReferenceException("Нет данных для отображения!");
-                _translatedData = reportData;
-                dataGridView1.DataSource = _translatedData;
+                else
+                {
+                    switch (reportTypeComboBox.SelectedItem?.ToString())
+                    {
+#pragma warning disable CS0162
+                        // Здесь алгоритм репортов.
+                        case "Отчёт 1":
+                            reportData = Database.Translate(reportData, "Пример 1"); // как переводить колоны у таблиц
+                            throw new Exception("Задайте корректный алгоритм репорта!");
+                            break;
+                        case "Отчёт 2":
+                            reportData = Database.Translate(reportData, "Пример 2"); // как переводить колоны у таблиц
+                            throw new Exception("Задайте корректный алгоритм репорта!");
+                            break;
+                        default:
+                            MessageBox.Show("Пожалуйста, выберите тип отчёта из списка", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                    }
+                    if (reportData == null) MessageBox.Show("Нет данных для отображения!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    _translatedData = reportData;
+                    dataGridView1.DataSource = _translatedData;
 #pragma warning restore CS0162
+                }
             }
             catch (Exception ex)
             {
