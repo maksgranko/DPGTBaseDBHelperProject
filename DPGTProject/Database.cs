@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace DPGTProject
 {
@@ -91,7 +92,6 @@ namespace DPGTProject
                 }
             }
         }
-
         public static string ConnectionStringBuilder(string databaseName)
         {
             return $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
@@ -190,7 +190,7 @@ namespace DPGTProject
                 da.UpdateCommand = cb.GetUpdateCommand();
                 da.InsertCommand = cb.GetInsertCommand();
                 da.DeleteCommand = cb.GetDeleteCommand();
-                
+
                 conn.Open();
                 return da.Update(data);
             }
@@ -215,7 +215,7 @@ namespace DPGTProject
         }
         public static bool CheckConnection()
         {
-            try 
+            try
             {
                 using (var conn = new SqlConnection(ConnectionStringBuilder("master")))
                 {
@@ -237,15 +237,14 @@ namespace DPGTProject
         }
         internal static DataTable GetAll(string tableName)
         {
-                DataTable dt = new DataTable();
-                using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
-                {
-                    SqlDataAdapter da = new SqlDataAdapter($"SELECT * FROM {tableName}", conn);
-                    da.Fill(dt);
-                }
-                return dt;
+            DataTable dt = new DataTable();
+            using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
+            {
+                SqlDataAdapter da = new SqlDataAdapter($"SELECT * FROM {tableName}", conn);
+                da.Fill(dt);
+            }
+            return dt;
         }
-
         public static string[] GetTableColumns(string tableName)
         {
             DataTable dt = new DataTable();
@@ -263,7 +262,6 @@ namespace DPGTProject
             }
             return dt.Rows.Cast<DataRow>().Select(r => r[0].ToString()).ToArray();
         }
-
         public static Dictionary<string, string> GetTableSchema(string tableName)
         {
             var schema = new Dictionary<string, string>();
@@ -291,7 +289,6 @@ namespace DPGTProject
             }
             return schema;
         }
-
         public static int ImportData(string tableName, DataTable data)
         {
             using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
@@ -319,13 +316,60 @@ namespace DPGTProject
                 }
             }
         }
+        public static bool GetDataTableFromSQL(string SQLRequest, out DataTable Dt)
+        {
+            Dt = null;
+            try
+            {
+                Dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
+                {
+                    new SqlDataAdapter(SQLRequest, conn).Fill(Dt);
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static DataTable GetDataTableFromSQL(string SQLRequest)
+        {
+            try
+            {
+                DataTable dt = new DataTable();
+                using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
+                {
+                    new SqlDataAdapter(SQLRequest, conn).Fill(dt);
+                }
+                return dt;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static void FillDataGridViewFromSQL(DataGridView dgv, string SQLRequest)
+        {
+            try
+            {
+                dgv.DataSource = GetDataTableFromSQL(SQLRequest);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка заполнения DataGridView: {ex.Message}");
+            }
+        }
+
         internal static void PreCheck()
         {
             if (!Database.CheckConnection())
             {
                 throw new Exception("Ошибка подключения к базе данных!");
             }
-            
+
             if (string.IsNullOrEmpty(SystemConfig.databaseName))
                 throw new SystemException("Пропишите название базы данных в основе!\n " +
                     "Заполните это в переменной databaseName класса SystemConfig.\n" +

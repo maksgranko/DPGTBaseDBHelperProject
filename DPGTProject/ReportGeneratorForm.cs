@@ -44,7 +44,7 @@ namespace DPGTProject
                         throw new Exception("Задайте корректный алгоритм репорта!");
                         break;
                     default:
-                        MessageBox.Show("Пожалуйста, выберите тип отчёта из списка", 
+                        MessageBox.Show("Пожалуйста, выберите тип отчёта из списка",
                             "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                 }
@@ -83,29 +83,59 @@ namespace DPGTProject
                     {
                         if (saveDialog.FilterIndex == 1)
                         {
-                            // Excel export
                             ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
                             using (var excelPackage = new ExcelPackage())
                             {
                                 var worksheet = excelPackage.Workbook.Worksheets.Add("Отчёт");
                                 worksheet.Cells["A1"].LoadFromDataTable(data, true);
+                                worksheet.Cells.AutoFitColumns();
                                 excelPackage.SaveAs(new FileInfo(saveDialog.FileName));
                             }
                         }
-                        else // PDF
+                        else
                         {
                             using (var fs = new FileStream(saveDialog.FileName, FileMode.Create))
                             {
                                 var document = new Document();
                                 var writer = PdfWriter.GetInstance(document, fs);
+                                var baseFont = BaseFont.CreateFont("c:/windows/fonts/arial.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
                                 document.Open();
+
+                                // Добавляем центрированный заголовок "Отчёт"
+                                var title = new Paragraph("Отчёт", new iTextSharp.text.Font(baseFont, 14, iTextSharp.text.Font.BOLD))
+                                {
+                                    Alignment = Element.ALIGN_CENTER
+                                };
+                                document.Add(title);
+
+                                // Добавляем пустую строку
+                                document.Add(new Paragraph(" "));
+
+                                // Добавляем название отчёта
+                                var reportName = new Paragraph(reportTypeComboBox.SelectedItem?.ToString() ?? "Без названия",
+                                    new iTextSharp.text.Font(baseFont, 12))
+                                {
+                                    Alignment = Element.ALIGN_CENTER
+                                };
+                                document.Add(reportName);
+
+                                // Добавляем пустую строку перед датой
+                                document.Add(new Paragraph(" "));
+
+                                // Добавляем дату отчёта
+                                var reportDate = new Paragraph(DateTime.Now.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("ru-RU")),
+                                    new iTextSharp.text.Font(baseFont, 10))
+                                {
+                                    Alignment = Element.ALIGN_LEFT
+                                };
+                                document.Add(reportDate);
+
+                                // Добавляем пустую строку перед таблицей
+                                document.Add(new Paragraph(" "));
 
                                 var table = new PdfPTable(data.Columns.Count);
                                 table.SetWidths(Enumerable.Repeat(1f, data.Columns.Count).ToArray());
 
-                                // Use Arial font with Cyrillic support
-                                var baseFont = BaseFont.CreateFont("c:/windows/fonts/arial.ttf",
-                                    BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
                                 var boldFont = new iTextSharp.text.Font(baseFont, 10);
                                 var normalFont = new iTextSharp.text.Font(baseFont, 9);
 
@@ -143,6 +173,11 @@ namespace DPGTProject
                 MessageBox.Show("Не удалось экспортировать отчет. Проверьте доступ к выбранной папке.",
                     "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void exit_btn_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
     }
 }

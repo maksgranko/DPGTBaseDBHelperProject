@@ -136,6 +136,9 @@
       <DependentUpon>UniversalTableViewerForm.cs</DependentUpon>
     </Compile>
     <Compile Include="UserConfig.cs" />
+    <EmbeddedResource Include="DataImportForm.resx">
+      <DependentUpon>DataImportForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
       <SubType>Designer</SubType>

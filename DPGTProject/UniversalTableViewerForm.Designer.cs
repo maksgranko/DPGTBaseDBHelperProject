@@ -33,6 +33,8 @@ namespace DPGTProject
             this.help_btn = new System.Windows.Forms.ToolStripButton();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+            this.exit_btn = new System.Windows.Forms.ToolStripButton();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.toolStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -43,7 +45,7 @@ namespace DPGTProject
             this.dataGridView1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dataGridView1.Location = new System.Drawing.Point(0, 25);
             this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(691, 367);
+            this.dataGridView1.Size = new System.Drawing.Size(821, 367);
             this.dataGridView1.TabIndex = 0;
             // 
             // toolStrip1
@@ -62,10 +64,12 @@ namespace DPGTProject
             this.toolStripLabel2,
             this.filter_tb,
             this.toolStripSeparator2,
-            this.help_btn});
+            this.help_btn,
+            this.toolStripSeparator5,
+            this.exit_btn});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(691, 25);
+            this.toolStrip1.Size = new System.Drawing.Size(821, 25);
             this.toolStrip1.TabIndex = 1;
             // 
             // save_btn
@@ -166,7 +170,7 @@ namespace DPGTProject
             this.statusLabel});
             this.statusStrip1.Location = new System.Drawing.Point(0, 392);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(691, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(821, 22);
             this.statusStrip1.TabIndex = 2;
             // 
             // statusLabel
@@ -174,9 +178,23 @@ namespace DPGTProject
             this.statusLabel.Name = "statusLabel";
             this.statusLabel.Size = new System.Drawing.Size(0, 17);
             // 
+            // toolStripSeparator5
+            // 
+            this.toolStripSeparator5.Name = "toolStripSeparator5";
+            this.toolStripSeparator5.Size = new System.Drawing.Size(6, 25);
+            // 
+            // exit_btn
+            // 
+            this.exit_btn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.exit_btn.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.exit_btn.Name = "exit_btn";
+            this.exit_btn.Size = new System.Drawing.Size(46, 22);
+            this.exit_btn.Text = "Выход";
+            this.exit_btn.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
+            // 
             // UniversalTableViewerForm
             // 
-            this.ClientSize = new System.Drawing.Size(691, 414);
+            this.ClientSize = new System.Drawing.Size(821, 414);
             this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.statusStrip1);
@@ -210,5 +228,7 @@ namespace DPGTProject
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
         private System.Windows.Forms.ToolStripLabel toolStripLabel2;
         private System.Windows.Forms.ToolStripTextBox filter_tb;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
+        private System.Windows.Forms.ToolStripButton exit_btn;
     }
 }

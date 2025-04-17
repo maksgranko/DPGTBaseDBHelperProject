@@ -9,11 +9,14 @@ namespace DPGTProject
     {
         public static string databaseName = "";
         public static string connectionString = $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
+        //Иногда работают следующие варианты:
+        //public static string connectionString = $"Data Source={Environment.MachineName}\\SQLEXPRESS;Initial Catalog={databaseName};Integrated Security=True;Encrypt=False;TrustServerCertificate=True";
+        //public static string connectionString = $"Data Source={Environment.MachineName}\\SQLEXPRESS;Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
         public static Point LastLocation = new Point(400, 300);
         public static string lastError = "";
         //Пример заполнения:
         //tables = new string[] { "Documents", "DocumentHistory", "Fines", "Owners", "Violations" };
-        public static string[] tables;
+        public static string[] tables = new string[] { };
         public static Dictionary<string, Dictionary<string, string>> ColumnTranslations = new Dictionary<string, Dictionary<string, string>>()
         {
             ["Owners"] = new Dictionary<string, string>()
@@ -28,7 +31,7 @@ namespace DPGTProject
         public static Dictionary<string, string> TableTranslations = new Dictionary<string, string>()
         {
             ["Sample"] = "Пример_названий_в_combobox1",
-            ["Sample1"] = "Пример_названий_в_combobox2", 
+            ["Sample1"] = "Пример_названий_в_combobox2",
             ["Sample2"] = "Пример_названий_в_combobox3",
             ["Sample3"] = "Пример_названий_в_combobox4",
             ["Users"] = "Пользователи" // Строку не трогать, она нужна для перевода
@@ -36,8 +39,8 @@ namespace DPGTProject
 
         public static string TranslateComboBox(string value)
         {
-            return TableTranslations.TryGetValue(value, out var translation) 
-                ? translation 
+            return TableTranslations.TryGetValue(value, out var translation)
+                ? translation
                 : value;
         }
 
