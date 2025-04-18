@@ -127,6 +127,7 @@
             this.Controls.Add(this.unlogin_btn);
             this.Controls.Add(this.dev_btn);
             this.Controls.Add(this.exit_btn);
+            this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.Name = "MainForm";

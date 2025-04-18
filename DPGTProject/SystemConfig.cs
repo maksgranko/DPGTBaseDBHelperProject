@@ -17,7 +17,7 @@ namespace DPGTProject
         public static bool enableSearch = true;                                                                         // Включить поиск в универсальной форме
         public static bool openEveryWindowInNew = true;                                                                 // Открывать новые окна в каждом новом
         public static bool moreExitButtons = true;                                                                      // БОЛЬШЕ КНОПОЧЕК "ВЫХОД" !!!
-        
+        public static bool additionalButtons = true;                                                                    // Добавляет кнопки добавления и изменения в UniversalTableViewerForm.cs
         #endregion --- Дополнительные функции ---
 
         #region --- Роли, необходимые для программы ---

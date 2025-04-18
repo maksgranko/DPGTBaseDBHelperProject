@@ -1,4 +1,5 @@
 using DPGTProject.Configs;
+using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -46,6 +47,7 @@ namespace DPGTProject
                 find_tb.Visible = false;
             }
             if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
+            if (!SystemConfig.additionalButtons) { editrow_btn.Visible = false; addrow_btn.Visible = false; }
         }
 
         private void DataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
@@ -245,6 +247,92 @@ namespace DPGTProject
         private void exit_btn_Click(object sender, EventArgs e)
         {
             this.Close();
+        }
+
+        private Dictionary<string, object> GetTableColumnDefinitions()
+        {
+            var columns = new Dictionary<string, object>();
+            foreach (DataColumn column in _originalData.Columns)
+            {
+                columns[column.ColumnName] = column.DataType;
+            }
+            return columns;
+        }
+
+        private void addrow_btn_Click(object sender, EventArgs e)
+        {
+            var columnDefinitions = GetTableColumnDefinitions();
+            using (var form = new UniversalAddEditForm(columnDefinitions, TableName))
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        string query = form.GeneratedInsertQuery.Replace("%TABLENAME%", TableName);
+                        Database.ExecuteNonQuery(query);
+                        LoadData();
+                        statusLabel.Text = "Запись успешно добавлена";
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Ошибка при добавлении записи: {ex.Message}",
+                            "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void editrow_btn_Click(object sender, EventArgs e)
+        {
+            if (dataGridView1.SelectedRows.Count != 1)
+            {
+                MessageBox.Show("Выберите одну строку для редактирования",
+                    "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var selectedRow = dataGridView1.SelectedRows[0];
+            var columnDefinitions = GetTableColumnDefinitions();
+            var existingData = new Dictionary<string, object>();
+
+            foreach (DataGridViewCell cell in selectedRow.Cells)
+            {
+                if (cell.OwningColumn.Name != "RowError")
+                {
+                    existingData[cell.OwningColumn.Name] = cell.Value;
+                }
+            }
+
+            using (var form = new UniversalAddEditForm(columnDefinitions, existingData, TableName))
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        string keyColumn = _originalData.PrimaryKey.Length > 0
+                            ? _originalData.PrimaryKey[0].ColumnName
+                            : _originalData.Columns[0].ColumnName;
+
+                        object keyValue = selectedRow.Cells[keyColumn].Value;
+                        string formattedValue = keyValue is string || keyValue is DateTime
+                            ? $"'{keyValue}'"
+                            : keyValue.ToString();
+
+                        string query = form.GeneratedUpdateQuery
+                            .Replace("%TABLENAME%", TableName)
+                            .Replace("%WHERE%", $"{keyColumn} = {formattedValue}");
+
+                        Database.ExecuteNonQuery(query);
+                        LoadData();
+                        statusLabel.Text = "Запись успешно изменена";
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Ошибка при изменении записи: {ex.Message}",
+                            "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
         }
     }
 }

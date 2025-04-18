@@ -154,6 +154,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.login_tb);
             this.Controls.Add(this.auth_btn);
+            this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.Name = "AuthForm";

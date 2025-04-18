@@ -116,6 +116,7 @@ namespace DPGTProject
             this.Controls.Add(this.reportTypeComboBox);
             this.Controls.Add(this.generate_btn);
             this.Controls.Add(this.export_btn);
+            this.DoubleBuffered = true;
             this.MaximumSize = new System.Drawing.Size(900, 439);
             this.MinimumSize = new System.Drawing.Size(397, 439);
             this.Name = "ReportGeneratorForm";

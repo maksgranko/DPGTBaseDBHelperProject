@@ -133,7 +133,7 @@
             // label4
             // 
             this.label4.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label4.Location = new System.Drawing.Point(18, 130);
+            this.label4.Location = new System.Drawing.Point(16, 130);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(282, 17);
             this.label4.TabIndex = 10;
@@ -151,7 +151,7 @@
             // hide_password_btn
             // 
             this.hide_password_btn.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.hide_password_btn.Location = new System.Drawing.Point(236, 125);
+            this.hide_password_btn.Location = new System.Drawing.Point(236, 126);
             this.hide_password_btn.Name = "hide_password_btn";
             this.hide_password_btn.Size = new System.Drawing.Size(64, 20);
             this.hide_password_btn.TabIndex = 2;
@@ -196,6 +196,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.login_tb);
             this.Controls.Add(this.register_btn);
+            this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.Name = "RegisterForm";
