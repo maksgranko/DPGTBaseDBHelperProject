@@ -36,6 +36,9 @@ namespace DPGTProject.Forms
 
         private void InitializeComponent(Dictionary<string, object> columnDefinitions, bool isEditMode)
         {
+            _columnDefinitions = columnDefinitions;
+            _isEditMode = isEditMode;
+
             this.SuspendLayout();
             // 
             // UniversalAddEditForm
@@ -44,6 +47,8 @@ namespace DPGTProject.Forms
             this.DoubleBuffered = true;
             this.Name = "UniversalAddEditForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
+            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
             this.ResumeLayout(false);
 
         }

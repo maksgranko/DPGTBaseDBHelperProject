@@ -17,6 +17,7 @@ namespace DPGTProject
         {
             InitializeComponent();
             DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
+            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
             if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
             this.tableComboBox.Items.AddRange(SystemConfig.tables.Select(t => SystemConfig.TranslateComboBox(t)).ToArray());
         }
@@ -25,7 +26,7 @@ namespace DPGTProject
         {
             OpenFileDialog openDialog = new OpenFileDialog();
             openDialog.Filter = "Excel Files|*.xlsx|CSV Files|*.csv";
-            
+
             if (openDialog.ShowDialog() == DialogResult.OK)
             {
                 try
@@ -37,13 +38,13 @@ namespace DPGTProject
                         {
                             var worksheet = excel.Workbook.Worksheets.First();
                             _importData = new DataTable();
-                            
+
                             // Заголовки
                             for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
                             {
                                 _importData.Columns.Add(worksheet.Cells[1, col].Text);
                             }
-                            
+
                             // Данные
                             for (int row = 2; row <= worksheet.Dimension.End.Row; row++)
                             {
@@ -66,7 +67,7 @@ namespace DPGTProject
                             {
                                 _importData.Columns.Add(header);
                             }
-                            
+
                             while (!reader.EndOfStream)
                             {
                                 string[] rows = reader.ReadLine().Split(',');
@@ -74,13 +75,13 @@ namespace DPGTProject
                             }
                         }
                     }
-                    
+
                     dataGridView1.DataSource = _importData;
                     importBtn.Enabled = false;
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Ошибка загрузки файла: {ex.Message}", 
+                    MessageBox.Show($"Ошибка загрузки файла: {ex.Message}",
                         "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
@@ -90,18 +91,18 @@ namespace DPGTProject
         {
             if (_importData == null || tableComboBox.SelectedItem == null)
             {
-                MessageBox.Show("Сначала выберите файл и таблицу", 
+                MessageBox.Show("Сначала выберите файл и таблицу",
                     "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             string tableName = SystemConfig.UntranslateComboBox(tableComboBox.Text);
             var dbSchema = Database.GetTableSchema(tableName);
-            
+
             // Проверка количества колонок
             if (_importData.Columns.Count != dbSchema.Keys.Count)
             {
-                MessageBox.Show($"Несовпадение количества колонок: в таблице {dbSchema.Keys.Count}, в файле {_importData.Columns.Count}", 
+                MessageBox.Show($"Несовпадение количества колонок: в таблице {dbSchema.Keys.Count}, в файле {_importData.Columns.Count}",
                     "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 importBtn.Enabled = false;
                 return;
@@ -111,7 +112,7 @@ namespace DPGTProject
             var missingColumns = dbSchema.Keys.Except(_importData.Columns.Cast<DataColumn>().Select(c => c.ColumnName));
             if (missingColumns.Any())
             {
-                MessageBox.Show($"Отсутствуют обязательные колонки: {string.Join(", ", missingColumns)}", 
+                MessageBox.Show($"Отсутствуют обязательные колонки: {string.Join(", ", missingColumns)}",
                     "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 importBtn.Enabled = false;
                 return;
@@ -124,7 +125,7 @@ namespace DPGTProject
                 if (dbSchema.TryGetValue(column.ColumnName, out var dbType))
                 {
                     // Простая проверка числовых типов
-                    if ((dbType == "int" || dbType == "decimal") && 
+                    if ((dbType == "int" || dbType == "decimal") &&
                         !double.TryParse(_importData.Rows[0][column].ToString(), out _))
                     {
                         typeErrors.Add($"{column.ColumnName}: ожидается {dbType}, получено string");
@@ -134,12 +135,12 @@ namespace DPGTProject
 
             if (typeErrors.Any())
             {
-                MessageBox.Show($"Несовместимость типов данных:\n{string.Join("\n", typeErrors)}", 
+                MessageBox.Show($"Несовместимость типов данных:\n{string.Join("\n", typeErrors)}",
                     "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 importBtn.Enabled = false;
                 return;
             }
-            
+
             importBtn.Enabled = true;
         }
 
@@ -152,14 +153,14 @@ namespace DPGTProject
             {
                 string tableName = SystemConfig.UntranslateComboBox(tableComboBox.Text);
                 Database.ImportData(tableName, _importData);
-                
-                MessageBox.Show("Данные успешно импортированы", 
+
+                MessageBox.Show("Данные успешно импортированы",
                     "Успешно", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 this.Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка импорта: {ex.Message}", 
+                MessageBox.Show($"Ошибка импорта: {ex.Message}",
                     "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

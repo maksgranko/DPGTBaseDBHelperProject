@@ -31,10 +31,16 @@ namespace DPGTProject
         public static string[] removeFromTableWhenAutodetect = new string[] { };                                        // (!) Какие таблицы удалять, после автоматического определения (!) Не работает если отключён автодетект.
         #endregion --- Таблицы и автоопределение таблиц ---
 
-        #region --- Цветовая тема ---
+        #region --- Цветовая тема и иконка ---
         public static bool applyCustomThemes = true;                                                                    // Применять кастомные темы к окнам
         public static DesignConfig.ApplicationTheme applicationTheme = DesignConfig.ApplicationTheme.SystemDefault;     // Указать цветовую палитру
-        #endregion --- Цветовая тема ---
+        public static Icon Icon = null;                                                                                 // Иконка для всех форм
+                                                                                                                        // Пример через ресурсы: 
+                                                                                                                        // Icon = Properties.Resources.AppIcon;
+                                                                                                                        // 
+                                                                                                                        // Пример через файл:
+                                                                                                                        // Icon = new Icon("C:\\path\\to\\icon.ico");
+        #endregion --- Цветовая тема и иконка ---
 
         #region --- Переводы таблиц и других элементов ---
         public static Dictionary<string, Dictionary<string, string>> ColumnTranslations = new Dictionary<string, Dictionary<string, string>>()

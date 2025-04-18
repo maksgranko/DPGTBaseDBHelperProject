@@ -10,6 +10,7 @@ namespace DPGTProject
         {
             InitializeComponent();
             DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
+            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
             this.roles_cb.Items.AddRange(SystemConfig.roles);
         }
 
@@ -51,7 +52,7 @@ namespace DPGTProject
             }
             else
             {
-                MessageBox.Show("Возникла ошибка при регистрации аккаунта!\nОшибка: "+SystemConfig.lastError, "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Возникла ошибка при регистрации аккаунта!\nОшибка: " + SystemConfig.lastError, "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
         }
@@ -94,5 +95,3 @@ namespace DPGTProject
         }
     }
 }
-
-

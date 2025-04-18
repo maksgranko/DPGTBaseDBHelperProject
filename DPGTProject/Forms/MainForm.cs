@@ -32,6 +32,7 @@ namespace DPGTProject
         {
             InitializeComponent();
             DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
+            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
         }
 
         private void MainForm_Load(object sender, EventArgs e)

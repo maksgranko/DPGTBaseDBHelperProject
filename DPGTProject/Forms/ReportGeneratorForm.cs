@@ -13,28 +13,37 @@ namespace DPGTProject
     public partial class ReportGeneratorForm : Form
     {
         private DataTable _translatedData;
-        private System.Windows.Forms.RadioButton radioPredefinedReport;
-        private System.Windows.Forms.RadioButton radioNormalTable;
+        private RadioButton radioPredefinedReport;
+        private RadioButton radioNormalTable;
 
-        public ReportGeneratorForm(string[] ReportsNames)
+        public ReportGeneratorForm(string[] ReportsNames) : this()
         {
-            InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
-            if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
             this.reportTypeComboBox.Items.AddRange(ReportsNames);
         }
         public ReportGeneratorForm()
         {
             InitializeComponent();
             DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
-            if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
+            if (!SystemConfig.moreExitButtons) exit_btn.Visible = false;
             ReportTypeChanged(null, null);
+            if (!Test.Initialized) radioButtonExportTables.Enabled = false;
+            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
         }
 
         private void ReportTypeChanged(object sender, EventArgs e)
         {
             reportTypeComboBox.Items.Clear();
 
+            if (radioButtonExportTables.Checked)
+            {
+                generate_btn.Enabled = false;
+                reportTypeComboBox.Enabled = false;
+            }
+            else
+            {
+                generate_btn.Enabled = true;
+                reportTypeComboBox.Enabled = true;
+            }
             if (radioPredefinedReport.Checked)
             {
                 reportTypeComboBox.Items.AddRange(new object[] {
@@ -93,6 +102,54 @@ namespace DPGTProject
 
         private void ExportReport(object sender, EventArgs e)
         {
+            if (radioButtonExportTables.Checked)
+            {
+                try
+                {
+                    // Создаем папку для экспорта
+                    string exportDir = Path.Combine(Application.StartupPath, "exports", DateTime.Now.ToString("yyyy-MM-dd"));
+                    Directory.CreateDirectory(exportDir);
+
+                    int exportedCount = 0;
+
+                    // Экспортируем каждую таблицу
+                    foreach (string tableName in SystemConfig.tables)
+                    {
+                        try
+                        {
+                            // Получаем данные таблицы
+                            DataTable tableData = Database.GetTableData(tableName);
+
+                            // Создаем Excel файл
+                            string filePath = Path.Combine(exportDir, $"{tableName}.xlsx");
+                            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+                            using (var excelPackage = new ExcelPackage())
+                            {
+                                var worksheet = excelPackage.Workbook.Worksheets.Add(tableName);
+                                worksheet.Cells["A1"].LoadFromDataTable(tableData, true);
+                                worksheet.Cells.AutoFitColumns();
+                                excelPackage.SaveAs(new FileInfo(filePath));
+                            }
+                            exportedCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Ошибка при экспорте таблицы {tableName}:\n{ex.Message}",
+                                "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+
+                    MessageBox.Show($"Успешно экспортировано {exportedCount} таблиц в:\n{exportDir}",
+                        "Экспорт завершен", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при экспорте таблиц:\n{ex.Message}",
+                        "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                return;
+            }
+
             if (dataGridView1.DataSource == null)
             {
                 MessageBox.Show("Пожалуйста, сначала сформируйте отчет",

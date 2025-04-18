@@ -31,6 +31,7 @@ namespace DPGTProject
         {
             InitializeComponent();
             DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
+            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
             dataGridView1.DataError += DataGridView1_DataError;
             if (!SystemConfig.enableFilter)
             {

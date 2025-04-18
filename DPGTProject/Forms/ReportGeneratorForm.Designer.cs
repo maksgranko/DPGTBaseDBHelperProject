@@ -35,6 +35,7 @@ namespace DPGTProject
             this.generate_btn = new System.Windows.Forms.Button();
             this.export_btn = new System.Windows.Forms.Button();
             this.exit_btn = new System.Windows.Forms.Button();
+            this.radioButtonExportTables = new System.Windows.Forms.RadioButton();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -106,9 +107,21 @@ namespace DPGTProject
             this.exit_btn.UseVisualStyleBackColor = true;
             this.exit_btn.Click += new System.EventHandler(this.exit_btn_Click);
             // 
+            // radioButtonExportTables
+            // 
+            this.radioButtonExportTables.AutoSize = true;
+            this.radioButtonExportTables.Location = new System.Drawing.Point(258, 57);
+            this.radioButtonExportTables.Name = "radioButtonExportTables";
+            this.radioButtonExportTables.Size = new System.Drawing.Size(202, 17);
+            this.radioButtonExportTables.TabIndex = 7;
+            this.radioButtonExportTables.Text = "Экспорт базы данных в виде XLSX";
+            this.radioButtonExportTables.UseVisualStyleBackColor = true;
+            this.radioButtonExportTables.CheckedChanged += new System.EventHandler(this.ReportTypeChanged);
+            // 
             // ReportGeneratorForm
             // 
             this.ClientSize = new System.Drawing.Size(536, 400);
+            this.Controls.Add(this.radioButtonExportTables);
             this.Controls.Add(this.radioPredefinedReport);
             this.Controls.Add(this.radioNormalTable);
             this.Controls.Add(this.exit_btn);
@@ -134,5 +147,6 @@ namespace DPGTProject
         private System.Windows.Forms.Button generate_btn;
         private System.Windows.Forms.Button export_btn;
         private System.Windows.Forms.Button exit_btn;
+        private System.Windows.Forms.RadioButton radioButtonExportTables;
     }
 }

@@ -10,6 +10,7 @@ namespace DPGTProject
         {
             InitializeComponent();
             DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
+            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
             if (Test.Initialized)
             {
                 login_tb.Text = "www";
@@ -29,7 +30,7 @@ namespace DPGTProject
 
         private void hide_password_btn_Click(object sender, EventArgs e)
         {
-            if(hide_password_btn.Text == "скрыть")
+            if (hide_password_btn.Text == "скрыть")
             {
                 hide_password_btn.Text = "показать";
                 password_tb.UseSystemPasswordChar = true;
@@ -64,7 +65,7 @@ namespace DPGTProject
             this.Hide();
             mf.Location = this.Location;
             if (mf.ShowDialog() != DialogResult.Retry) { Functions.Exit(); }
-            if(!this.IsDisposed) this.Show();
+            if (!this.IsDisposed) this.Show();
         }
 
         private void register_btn_Click(object sender, EventArgs e)
@@ -83,12 +84,10 @@ namespace DPGTProject
 
         private void password_tb_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if(e.KeyChar == '\r')
+            if (e.KeyChar == '\r')
             {
                 AuthUser();
             }
         }
     }
 }
-
-

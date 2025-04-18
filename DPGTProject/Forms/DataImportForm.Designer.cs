@@ -48,7 +48,7 @@ namespace DPGTProject
             this.dataGridView1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.dataGridView1.Location = new System.Drawing.Point(0, 100);
             this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(703, 300);
+            this.dataGridView1.Size = new System.Drawing.Size(562, 300);
             this.dataGridView1.TabIndex = 0;
             // 
             // tableComboBox
@@ -99,7 +99,7 @@ namespace DPGTProject
             // 
             // DataImportForm
             // 
-            this.ClientSize = new System.Drawing.Size(703, 400);
+            this.ClientSize = new System.Drawing.Size(562, 400);
             this.Controls.Add(this.exit_btn);
             this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.tableComboBox);
