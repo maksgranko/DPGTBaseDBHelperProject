@@ -6,22 +6,37 @@ namespace DPGTProject
 {
     public static partial class SystemConfig
     {
-        public static string databaseName = "";
-        public static string connectionString = Database.ConnectionStringBuilder(databaseName);             // !!! ПОМЕНЯТЬ ОСНОВУ СТРОКИ МОЖНО В Database.cs МЕТОД: ConnectionStringBuilder !!!
-        public static string lastError = "";
+        #region --- UserSpace ---
+        #region --- Работа с базой данных ---
+        public static string databaseName = "";                                                                         // !!! ВВЕДИТЕ НАЗВАНИЕ БД, ЭТО НЕОБХОДИМО В ПЕРВУЮ ОЧЕРЕДЬ !!!
+        public static string connectionString = Database.ConnectionStringBuilder(databaseName);                         // !!! ПОМЕНЯТЬ ОСНОВУ СТРОКИ МОЖНО В Database.cs МЕТОД: ConnectionStringBuilder !!!
+        #endregion --- Работа с базой данных ---
 
-        public static string[] tables = new string[] { };                                                   // Пример заполнения: tables = new string[] { "Documents", "DocumentHistory", "Fines", "Owners", "Violations" };
-        public static string[] roles = new string[] { "Администратор", "Менеджер" };                        // Здесь прописываются роли!
-        public static string[] removeFromTableWhenStart = new string[] { "Users" };                         // Какие таблицы удалять, после запуска(из добавленных вручную или автоматически добавленных)
-        public static bool tableAutodetect = true;                                                          // Включить автоопределение таблиц из базы данных
-        public static bool enableFilter = true;                                                             // Включить фильтр в универсальной форме
-        public static bool enableSearch = true;                                                             // Включить поиск в универсальной форме
-        public static bool openEveryWindowInNew = false;                                                    // Открывать новые окна в каждом новом
-        public static string[] removeFromTableWhenAutodetect = new string[] { };                            // (!) Какие таблицы удалять, после автоматического определения (!) Не работает если отключён автодетект.
+        #region --- Дополнительные функции ---
+        public static bool enableFilter = true;                                                                         // Включить фильтр в универсальной форме
+        public static bool enableSearch = true;                                                                         // Включить поиск в универсальной форме
+        public static bool openEveryWindowInNew = true;                                                                 // Открывать новые окна в каждом новом
+        public static bool moreExitButtons = true;                                                                      // БОЛЬШЕ КНОПОЧЕК "ВЫХОД" !!!
+        
+        #endregion --- Дополнительные функции ---
 
-        public static Point LastLocation = new Point(400, 300);
-        public static DesignConfig.ApplicationTheme applicationTheme = DesignConfig.ApplicationTheme.Dark;  // Указать цветовую палитру
+        #region --- Роли, необходимые для программы ---
+        public static string[] roles = new string[] { "Администратор", "Менеджер" };                                    // Здесь прописываются роли!
+        #endregion --- Роли, необходимые для программы ---
 
+        #region --- Таблицы и автоопределение таблиц ---
+        public static string[] tables = new string[] { };                                                               // Пример заполнения: tables = new string[] { "Documents", "DocumentHistory", "Fines", "Owners", "Violations" }; (!) НЕОБХОДИМО ОТКЛЮЧИТЬ АВТООПРЕДЕЛЕНИЕ ДЛЯ КОРРЕКТНОЙ РАБОТЫ!
+        public static string[] removeFromTableWhenStart = new string[] { "Users" };                                     // Какие таблицы удалять, после запуска(из добавленных вручную или автоматически добавленных)
+        public static bool tableAutodetect = true;                                                                      // Включить автоопределение таблиц из базы данных
+        public static string[] removeFromTableWhenAutodetect = new string[] { };                                        // (!) Какие таблицы удалять, после автоматического определения (!) Не работает если отключён автодетект.
+        #endregion --- Таблицы и автоопределение таблиц ---
+
+        #region --- Цветовая тема ---
+        public static bool applyCustomThemes = true;                                                                    // Применять кастомные темы к окнам
+        public static DesignConfig.ApplicationTheme applicationTheme = DesignConfig.ApplicationTheme.SystemDefault;     // Указать цветовую палитру
+        #endregion --- Цветовая тема ---
+
+        #region --- Переводы таблиц и других элементов ---
         public static Dictionary<string, Dictionary<string, string>> ColumnTranslations = new Dictionary<string, Dictionary<string, string>>()
         {
             ["Owners"] = new Dictionary<string, string>()
@@ -40,5 +55,13 @@ namespace DPGTProject
             ["Sample3"] = "Пример_названий_в_combobox4",
             ["Users"] = "Пользователи" // Строку не трогать, она нужна для перевода
         };
+        #endregion --- Переводы таблиц и других элементов ---
+        #endregion --- UserSpace ---
+        #region --- DevSpace ---
+        // Системные настройки, здесь нет необходимости что-либо менять
+        public static string lastError = "";
+        public static Point LastLocation = new Point(400, 300);
+        // Системные настройки, здесь нет необходимости что-либо менять
+        #endregion --- DevSpace ---
     }
 }

@@ -19,13 +19,15 @@ namespace DPGTProject
         public ReportGeneratorForm(string[] ReportsNames)
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
+            if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
             this.reportTypeComboBox.Items.AddRange(ReportsNames);
         }
         public ReportGeneratorForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
+            if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
             ReportTypeChanged(null, null);
         }
 

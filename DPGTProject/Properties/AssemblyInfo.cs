@@ -22,23 +22,8 @@ using System.Runtime.InteropServices;
 // Следующий GUID служит для идентификации библиотеки типов, если этот проект будет видимым для COM
 [assembly: Guid("45a23ed4-3255-43e8-8302-12f7e5d50ea7")]
 
-// Сведения о версии сборки состоят из указанных ниже четырех значений:
-//
-//      Основной номер версии
-//      Дополнительный номер версии
-//      Номер сборки
-//      Редакция
-//
-<<<<<<< HEAD
-[assembly: AssemblyVersion("1.2025.108.146")]
-[assembly: AssemblyFileVersion("1.2025.108.146")]
+[assembly: AssemblyVersion("1.2025.108.172")]
+[assembly: AssemblyFileVersion("1.2025.108.172")]
 
 
-[assembly: AssemblyInformationalVersion("0.2025.108.37")]
-=======
-[assembly: AssemblyVersion("1.2025.108.143")]
-[assembly: AssemblyFileVersion("1.2025.108.143")]
-
-
-[assembly: AssemblyInformationalVersion("0.2025.108.34")]
->>>>>>> 9c8cce7047f4946e24cd67646306ce6fd8de3de0
+[assembly: AssemblyInformationalVersion("0.2025.108.63")]

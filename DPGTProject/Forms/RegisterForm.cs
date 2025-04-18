@@ -9,7 +9,7 @@ namespace DPGTProject
         public RegisterForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
             this.roles_cb.Items.AddRange(SystemConfig.roles);
         }
 

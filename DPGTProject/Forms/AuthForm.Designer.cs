@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AuthForm));
             this.auth_btn = new System.Windows.Forms.Button();
             this.login_tb = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -131,7 +130,7 @@
             // hide_password_btn
             // 
             this.hide_password_btn.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.hide_password_btn.Location = new System.Drawing.Point(236, 125);
+            this.hide_password_btn.Location = new System.Drawing.Point(236, 127);
             this.hide_password_btn.Name = "hide_password_btn";
             this.hide_password_btn.Size = new System.Drawing.Size(64, 20);
             this.hide_password_btn.TabIndex = 3;

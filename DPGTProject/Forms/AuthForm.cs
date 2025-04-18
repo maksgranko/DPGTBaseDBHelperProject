@@ -9,7 +9,7 @@ namespace DPGTProject
         public AuthForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
             if (Test.Initialized)
             {
                 login_tb.Text = "www";

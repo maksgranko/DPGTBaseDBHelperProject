@@ -16,7 +16,8 @@ namespace DPGTProject
         public DataImportForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
+            if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
             this.tableComboBox.Items.AddRange(SystemConfig.tables.Select(t => SystemConfig.TranslateComboBox(t)).ToArray());
         }
 

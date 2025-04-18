@@ -1,5 +1,4 @@
-﻿using DPGTProject.Properties;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -19,11 +18,28 @@ namespace DPGTProject.Configs
         }
 
         // Цветовая палитра
+        private static Color _formBackgroundColor = SystemColors.Control;
+        public static Color FormBackgroundColor
+        {
+            get => _formBackgroundColor;
+            set
+            {
+                _formBackgroundColor = value;
+                // Автоматически обновить все открытые формы
+                foreach (Form form in Application.OpenForms)
+                {
+                    form.BackColor = value;
+                }
+            }
+        }
         public static Color PrimaryColor { get; set; } = SystemColors.HotTrack;
         public static Color SecondaryColor { get; set; } = SystemColors.Control;
         public static Color AccentColor { get; set; } = SystemColors.Highlight;
         public static Color TextColor { get; set; } = SystemColors.ControlText;
         public static Color ErrorColor { get; set; } = SystemColors.ControlDark;
+        public static Color DisabledControlColor { get; set; } = SystemColors.ControlDark;
+        public static Color DisabledTextColor { get; set; } = SystemColors.GrayText;
+        public static Color GridLineColor { get; set; } = SystemColors.ControlDark;
 
         // Основной метод для настройки контролов
         public static void ApplyControlsSettings(Control[] controls, Dictionary<string, object> settings = null, bool usePalette = false)
@@ -86,8 +102,18 @@ namespace DPGTProject.Configs
             switch (control)
             {
                 case Button button:
-                    button.BackColor = PrimaryColor;
-                    button.ForeColor = Color.White;
+                    button.FlatStyle = FlatStyle.Flat;
+                    button.FlatAppearance.BorderSize = 0;
+                    if (button.Enabled)
+                    {
+                        button.BackColor = PrimaryColor;
+                        button.ForeColor = Color.White;
+                    }
+                    else
+                    {
+                        button.BackColor = DisabledControlColor;
+                        button.ForeColor = DisabledTextColor;
+                    }
                     break;
 
                 case TextBox textBox:
@@ -99,7 +125,7 @@ namespace DPGTProject.Configs
                     break;
 
                 case Form form:
-                    form.BackColor = SecondaryColor;
+                    form.BackColor = FormBackgroundColor;
                     break;
 
                 case CheckBox checkBox:
@@ -108,18 +134,32 @@ namespace DPGTProject.Configs
                     break;
 
                 case ComboBox comboBox:
+                    comboBox.FlatStyle = FlatStyle.Flat;
+                    comboBox.BackColor = SecondaryColor;
+                    comboBox.ForeColor = TextColor;
+                    comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+                    if (!comboBox.Enabled)
+                    {
+                        comboBox.BackColor = DisabledControlColor;
+                    }
+                    break;
                 case ListBox listBox:
-                    control.BackColor = SecondaryColor;
-                    control.ForeColor = TextColor;
+                    listBox.BackColor = SecondaryColor;
+                    listBox.ForeColor = TextColor;
                     break;
 
                 case DataGridView grid:
                     grid.BackgroundColor = SecondaryColor;
                     grid.ForeColor = TextColor;
+                    grid.BorderStyle = BorderStyle.None;
+                    grid.EnableHeadersVisualStyles = false;
                     grid.DefaultCellStyle.BackColor = SecondaryColor;
                     grid.DefaultCellStyle.ForeColor = TextColor;
                     grid.ColumnHeadersDefaultCellStyle.BackColor = PrimaryColor;
                     grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+                    grid.RowHeadersDefaultCellStyle.BackColor = SecondaryColor;
+                    grid.RowHeadersDefaultCellStyle.ForeColor = TextColor;
+                    grid.GridColor = GridLineColor;
                     break;
 
                 case Panel panel:
@@ -140,13 +180,27 @@ namespace DPGTProject.Configs
                 ApplyPaletteSettings(childControl);
             }
         }
-        internal static void ApplyTheme(ApplicationTheme theme, Control.ControlCollection controls)
+
+
+        // Методы для работы с темами
+        public static void ApplyTheme(ApplicationTheme theme, Control[] controls = null)
         {
+            ApplyTheme(theme, (IEnumerable<Control>)controls);
+        }
+
+        // Перегрузка для IEnumerable
+        public static void ApplyTheme(ApplicationTheme theme, Control control)
+        {
+            ApplyTheme(theme, new[] { control });
+        }
+
+        public static void ApplyTheme(ApplicationTheme theme, IEnumerable<Control> controls = null)
+        {
+            if (!SystemConfig.applyCustomThemes) { Console.WriteLine("Невозможно применить тему. Это отключено в настройках."); return; }
             switch (theme)
             {
                 case ApplicationTheme.SystemDefault:
-                    SetSystemColors();
-                    break;
+                    return;
                 case ApplicationTheme.Light:
                     SetLightTheme();
                     break;
@@ -162,92 +216,80 @@ namespace DPGTProject.Configs
             }
 
             if (controls != null)
-                ApplyControlsSettings(controls, usePalette: true);
-        }
-
-
-        // Методы для работы с темами
-        public static void ApplyTheme(ApplicationTheme theme, Control[] controls = null)
-        {
-            ApplyTheme(theme, (IEnumerable<Control>)controls);
-        }
-
-        // Перегрузка для IEnumerable
-        public static void ApplyTheme(ApplicationTheme theme, Control control)
-        {
-            ApplyTheme(theme, new[] { control });
-        }
-
-        public static void ApplyTheme(ApplicationTheme theme, IEnumerable<Control> controls)
-        {
-            if (controls == null)
-                return;
-
-            switch (theme)
             {
-                case ApplicationTheme.SystemDefault:
-                    SetSystemColors();
-                    break;
-                case ApplicationTheme.Light:
-                    SetLightTheme();
-                    break;
-                case ApplicationTheme.Dark:
-                    SetDarkTheme();
-                    break;
-                case ApplicationTheme.Blue:
-                    SetBlueTheme();
-                    break;
-                case ApplicationTheme.HighContrast:
-                    SetHighContrastTheme();
-                    break;
+                ApplyControlsSettings(controls, usePalette: true);
             }
-
-            ApplyControlsSettings(controls, usePalette: true);
+            // Обновить все открытые формы
+            foreach (Form form in Application.OpenForms)
+            {
+                form.BackColor = FormBackgroundColor;
+                ApplyControlsSettings(form.Controls, usePalette: true);
+            }
         }
 
         private static void SetSystemColors()
         {
             PrimaryColor = SystemColors.HotTrack;
             SecondaryColor = SystemColors.Control;
+            FormBackgroundColor = SystemColors.Control;
             AccentColor = SystemColors.Highlight;
             TextColor = SystemColors.ControlText;
             ErrorColor = SystemColors.ControlDark;
+            DisabledControlColor = SystemColors.ControlDark;
+            DisabledTextColor = SystemColors.GrayText;
+            GridLineColor = SystemColors.ControlDark;
         }
 
         private static void SetLightTheme()
         {
             PrimaryColor = Color.FromArgb(0, 120, 215);
             SecondaryColor = Color.WhiteSmoke;
+            FormBackgroundColor = Color.WhiteSmoke;
             AccentColor = Color.FromArgb(0, 153, 255);
             TextColor = Color.Black;
             ErrorColor = Color.FromArgb(255, 50, 50);
+            DisabledControlColor = Color.FromArgb(220, 220, 220);
+            DisabledTextColor = Color.Gray;
+            GridLineColor = Color.FromArgb(200, 200, 200);
         }
 
         private static void SetDarkTheme()
         {
             PrimaryColor = Color.FromArgb(0, 120, 215);
             SecondaryColor = Color.FromArgb(45, 45, 48);
+            FormBackgroundColor = Color.FromArgb(45, 45, 48);
             AccentColor = Color.FromArgb(0, 153, 255);
             TextColor = Color.White;
             ErrorColor = Color.FromArgb(255, 50, 50);
+            DisabledControlColor = Color.FromArgb(80, 80, 80);
+            DisabledTextColor = Color.Gray;
+            GridLineColor = Color.FromArgb(80, 80, 80);
         }
 
         private static void SetBlueTheme()
         {
             PrimaryColor = Color.FromArgb(0, 90, 158);
             SecondaryColor = Color.FromArgb(240, 240, 240);
+            FormBackgroundColor = Color.FromArgb(240, 240, 240);
             AccentColor = Color.FromArgb(0, 120, 215);
             TextColor = Color.Black;
             ErrorColor = Color.FromArgb(200, 0, 0);
+            DisabledControlColor = Color.FromArgb(200, 200, 200);
+            DisabledTextColor = Color.Gray;
+            GridLineColor = Color.FromArgb(180, 180, 180);
         }
 
         private static void SetHighContrastTheme()
         {
             PrimaryColor = Color.Black;
             SecondaryColor = Color.White;
+            FormBackgroundColor = Color.White;
             AccentColor = Color.Yellow;
             TextColor = Color.Black;
             ErrorColor = Color.Red;
+            DisabledControlColor = Color.Gray;
+            DisabledTextColor = Color.DarkGray;
+            GridLineColor = Color.Black;
         }
 
 

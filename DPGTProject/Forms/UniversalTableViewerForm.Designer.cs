@@ -176,6 +176,7 @@ namespace DPGTProject
             this.exit_btn.Size = new System.Drawing.Size(46, 22);
             this.exit_btn.Text = "Выход";
             this.exit_btn.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
+            this.exit_btn.Click += new System.EventHandler(this.exit_btn_Click);
             // 
             // statusStrip1
             // 

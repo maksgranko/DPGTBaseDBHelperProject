@@ -29,7 +29,7 @@ namespace DPGTProject
         public UniversalTableViewerForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
             dataGridView1.DataError += DataGridView1_DataError;
             if (!SystemConfig.enableFilter)
             {
@@ -45,6 +45,7 @@ namespace DPGTProject
                 find_previous_btn.Visible = false;
                 find_tb.Visible = false;
             }
+            if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
         }
 
         private void DataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
@@ -241,5 +242,9 @@ namespace DPGTProject
             statusLabel.Text = $"Отфильтровано записей: {_filteredData.Rows.Count}";
         }
 
+        private void exit_btn_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
     }
 }

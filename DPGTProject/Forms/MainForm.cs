@@ -31,7 +31,7 @@ namespace DPGTProject
         public MainForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -39,7 +39,7 @@ namespace DPGTProject
             hello_lb.Text = "Здравствуй, " + UserConfig.userLogin + "!";
             role_lb.Text = "Ваша роль: " + UserConfig.userRole;
 
-            // В SystemConfig.cs переменная tables содержит названия таблиц, которые необходимо использовать, названия брать из БД, пример заполнения выше
+            // В SystemConfig.cs переменная tables содержит названия таблиц, редактировать там
             tables = SystemConfig.tables;
             if (tables == null || tables.Length == 0) throw new NullReferenceException("Заполните список отображаемых таблиц!");
             if (UserConfig.userRole == "Администратор") tables = tables.Append("Users").ToArray();
