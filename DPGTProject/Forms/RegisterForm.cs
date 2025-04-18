@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DPGTProject.Configs;
+using System;
 using System.Windows.Forms;
 
 namespace DPGTProject
@@ -8,6 +9,7 @@ namespace DPGTProject
         public RegisterForm()
         {
             InitializeComponent();
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
             this.roles_cb.Items.AddRange(SystemConfig.roles);
         }
 

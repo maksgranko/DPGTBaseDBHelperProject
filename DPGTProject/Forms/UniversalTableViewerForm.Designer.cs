@@ -121,6 +121,7 @@ namespace DPGTProject
             this.find_next_btn.Name = "find_next_btn";
             this.find_next_btn.Size = new System.Drawing.Size(23, 22);
             this.find_next_btn.Text = "↑";
+            this.find_next_btn.ToolTipText = "Далее";
             this.find_next_btn.Click += new System.EventHandler(this.FindNext_Click);
             // 
             // find_previous_btn
@@ -129,7 +130,7 @@ namespace DPGTProject
             this.find_previous_btn.Name = "find_previous_btn";
             this.find_previous_btn.Size = new System.Drawing.Size(23, 22);
             this.find_previous_btn.Text = "↓";
-            this.find_previous_btn.ToolTipText = "Далее";
+            this.find_previous_btn.ToolTipText = "Назад";
             this.find_previous_btn.Click += new System.EventHandler(this.FindPrevious_Click);
             // 
             // toolStripSeparator4
