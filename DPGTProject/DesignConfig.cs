@@ -40,6 +40,8 @@ namespace DPGTProject.Configs
         public static Color DisabledControlColor { get; set; } = SystemColors.ControlDark;
         public static Color DisabledTextColor { get; set; } = SystemColors.GrayText;
         public static Color GridLineColor { get; set; } = SystemColors.ControlDark;
+        public static Color LinesColor { get; set; } = SystemColors.ControlDark;
+        public static int BorderSize { get; set; } = 1;
 
         // Основной метод для настройки контролов
         public static void ApplyControlsSettings(Control[] controls, Dictionary<string, object> settings = null, bool usePalette = false)
@@ -103,7 +105,8 @@ namespace DPGTProject.Configs
             {
                 case Button button:
                     button.FlatStyle = FlatStyle.Flat;
-                    button.FlatAppearance.BorderSize = 0;
+                    button.FlatAppearance.BorderSize = BorderSize;
+                    button.FlatAppearance.BorderColor = LinesColor;
                     if (button.Enabled)
                     {
                         button.BackColor = PrimaryColor;
@@ -238,6 +241,7 @@ namespace DPGTProject.Configs
             DisabledControlColor = SystemColors.ControlDark;
             DisabledTextColor = SystemColors.GrayText;
             GridLineColor = SystemColors.ControlDark;
+            BorderSize = 1;
         }
 
         private static void SetLightTheme()
@@ -251,6 +255,7 @@ namespace DPGTProject.Configs
             DisabledControlColor = Color.FromArgb(220, 220, 220);
             DisabledTextColor = Color.Gray;
             GridLineColor = Color.FromArgb(200, 200, 200);
+            BorderSize = 0;
         }
 
         private static void SetDarkTheme()
@@ -264,6 +269,7 @@ namespace DPGTProject.Configs
             DisabledControlColor = Color.FromArgb(80, 80, 80);
             DisabledTextColor = Color.Gray;
             GridLineColor = Color.FromArgb(80, 80, 80);
+            BorderSize = 0;
         }
 
         private static void SetBlueTheme()
@@ -277,6 +283,7 @@ namespace DPGTProject.Configs
             DisabledControlColor = Color.FromArgb(200, 200, 200);
             DisabledTextColor = Color.Gray;
             GridLineColor = Color.FromArgb(180, 180, 180);
+            BorderSize = 0;
         }
 
         private static void SetHighContrastTheme()
@@ -290,6 +297,7 @@ namespace DPGTProject.Configs
             DisabledControlColor = Color.Gray;
             DisabledTextColor = Color.DarkGray;
             GridLineColor = Color.Black;
+            BorderSize = 1;
         }
 
 

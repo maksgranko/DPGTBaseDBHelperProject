@@ -68,6 +68,14 @@ namespace DPGTProject
                     string tableName = SystemConfig.UntranslateComboBox(reportTypeComboBox.SelectedItem?.ToString());
                     reportData = Database.GetTableData(tableName);
                     reportData = Database.Translate(reportData, tableName);
+
+                    if (reportData == null)
+                    {
+                        MessageBox.Show("Не удалось получить данные таблицы!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                    _translatedData = reportData;
+                    dataGridView1.DataSource = _translatedData;
                 }
                 else
                 {

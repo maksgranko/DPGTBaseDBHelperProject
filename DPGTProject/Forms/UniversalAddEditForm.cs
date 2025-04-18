@@ -1,3 +1,4 @@
+using DPGTProject.Configs;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
