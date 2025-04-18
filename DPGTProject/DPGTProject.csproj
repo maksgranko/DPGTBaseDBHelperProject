@@ -89,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Auth.cs" />
+    <Compile Include="DesignConfig.cs" />
     <Compile Include="Forms\DataImportForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -128,8 +129,8 @@
     <Compile Include="Forms\ReportGeneratorForm.Designer.cs">
       <DependentUpon>ReportGeneratorForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Configs\SystemConfig.cs" />
-    <Compile Include="Configs\SystemConfig.Functions.cs" />
+    <Compile Include="SystemConfig.cs" />
+    <Compile Include="SystemConfig.Functions.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="Forms\UniversalTableViewerForm.cs">
       <SubType>Form</SubType>
@@ -137,7 +138,7 @@
     <Compile Include="Forms\UniversalTableViewerForm.Designer.cs">
       <DependentUpon>UniversalTableViewerForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Configs\UserConfig.cs" />
+    <Compile Include="UserConfig.cs" />
     <EmbeddedResource Include="Forms\DataImportForm.resx">
       <DependentUpon>DataImportForm.cs</DependentUpon>
     </EmbeddedResource>

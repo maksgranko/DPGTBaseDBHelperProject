@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DPGTProject.Configs;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -30,6 +31,7 @@ namespace DPGTProject
         public MainForm()
         {
             InitializeComponent();
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
         }
 
         private void MainForm_Load(object sender, EventArgs e)

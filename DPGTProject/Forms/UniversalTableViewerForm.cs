@@ -1,3 +1,4 @@
+using DPGTProject.Configs;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -28,6 +29,7 @@ namespace DPGTProject
         public UniversalTableViewerForm()
         {
             InitializeComponent();
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
             dataGridView1.DataError += DataGridView1_DataError;
             if (!SystemConfig.enableFilter)
             {

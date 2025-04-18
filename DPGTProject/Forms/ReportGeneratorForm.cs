@@ -1,3 +1,4 @@
+using DPGTProject.Configs;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using OfficeOpenXml;
@@ -18,11 +19,13 @@ namespace DPGTProject
         public ReportGeneratorForm(string[] ReportsNames)
         {
             InitializeComponent();
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
             this.reportTypeComboBox.Items.AddRange(ReportsNames);
         }
         public ReportGeneratorForm()
         {
             InitializeComponent();
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
             ReportTypeChanged(null, null);
         }
 

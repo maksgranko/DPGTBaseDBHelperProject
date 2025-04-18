@@ -1,3 +1,4 @@
+using DPGTProject.Configs;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
@@ -15,8 +16,8 @@ namespace DPGTProject
         public DataImportForm()
         {
             InitializeComponent();
-            this.tableComboBox.Items.AddRange(SystemConfig.tables
-                .Select(t => SystemConfig.TranslateComboBox(t)).ToArray());
+            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this.Controls);
+            this.tableComboBox.Items.AddRange(SystemConfig.tables.Select(t => SystemConfig.TranslateComboBox(t)).ToArray());
         }
 
         private void SelectFile(object sender, EventArgs e)
