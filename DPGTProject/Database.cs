@@ -369,6 +369,30 @@ namespace DPGTProject
                 MessageBox.Show($"Ошибка заполнения DataGridView: {ex.Message}");
             }
         }
+
+        public static bool IsIdentityColumn(string tableName, string columnName)
+        {
+            try
+            {
+                using (var conn = new SqlConnection(SystemConfig.connectionString))
+                {
+                    string query = @"
+                        SELECT COLUMNPROPERTY(OBJECT_ID(@TableName), @ColumnName, 'IsIdentity') AS IsIdentity";
+
+                    var cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@TableName", tableName);
+                    cmd.Parameters.AddWithValue("@ColumnName", columnName);
+
+                    conn.Open();
+                    var result = cmd.ExecuteScalar();
+                    return result != DBNull.Value && Convert.ToInt32(result) == 1;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
         public static string[] GetTables(bool includeSystemTables = false)
         {
             DataTable dt = new DataTable();

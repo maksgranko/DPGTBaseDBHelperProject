@@ -21,8 +21,16 @@ namespace DPGTProject.Forms
 
         public UniversalAddEditForm(Dictionary<string, object> columnDefinitions, string tableName)
         {
-            _tableName = tableName;
-            InitializeComponent(columnDefinitions, false);
+            try
+            {
+                _tableName = tableName;
+                InitializeComponent(columnDefinitions, false);
+            }
+            catch
+            {
+                DialogResult = DialogResult.Cancel;
+                this.Dispose();
+            }
         }
 
         public UniversalAddEditForm(
@@ -30,9 +38,17 @@ namespace DPGTProject.Forms
             Dictionary<string, object> existingData,
             string tableName)
         {
-            _existingData = existingData;
-            _tableName = tableName;
-            InitializeComponent(columnDefinitions, true);
+            try
+            {
+                _existingData = existingData;
+                _tableName = tableName;
+                InitializeComponent(columnDefinitions, true);
+            }
+            catch
+            {
+                DialogResult = DialogResult.Cancel;
+                this.Dispose();
+            }
         }
 
         private void InitializeComponent(Dictionary<string, object> columnDefinitions, bool isEditMode)
@@ -47,13 +63,27 @@ namespace DPGTProject.Forms
             this.ClientSize = new System.Drawing.Size(284, 261);
             this.DoubleBuffered = true;
             this.Name = "UniversalAddEditForm";
+            this.Text = _isEditMode ? $"Редактирование: {_tableName}" : $"Добавление: {_tableName}";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.DialogResult = DialogResult.Abort;
             DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
             if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
+
+            try
+            {
+                CreateDynamicControls();
+                ConfigureButtons();
+            }
+            catch
+            {
+                MessageBox.Show(_isEditMode ?
+                    "Данную строку невозможно отредактировать." :
+                    "Данную строку невозможно удалить.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.Close();
+            }
+
             this.ResumeLayout(false);
-
         }
-
         private void CreateDynamicControls()
         {
             int yOffset = 20;
@@ -255,8 +285,11 @@ namespace DPGTProject.Forms
 
                 foreach (var control in _dynamicControls)
                 {
-                    columns.Add(control.Key);
-                    values.Add(FormatSqlValue(GetControlValue(control.Value)));
+                    if (!Database.IsIdentityColumn(_tableName, control.Key))
+                    {
+                        columns.Add(control.Key);
+                        values.Add(FormatSqlValue(GetControlValue(control.Value)));
+                    }
                 }
 
                 return $"INSERT INTO %TABLENAME% ({string.Join(", ", columns)}) VALUES ({string.Join(", ", values)})";
@@ -266,7 +299,10 @@ namespace DPGTProject.Forms
                 var setParts = new List<string>();
                 foreach (var control in _dynamicControls)
                 {
-                    setParts.Add($"{control.Key} = {FormatSqlValue(GetControlValue(control.Value))}");
+                    if (!Database.IsIdentityColumn(_tableName, control.Key))
+                    {
+                        setParts.Add($"{control.Key} = {FormatSqlValue(GetControlValue(control.Value))}");
+                    }
                 }
                 return $"UPDATE %TABLENAME% SET {string.Join(", ", setParts)} WHERE %WHERE%";
             }

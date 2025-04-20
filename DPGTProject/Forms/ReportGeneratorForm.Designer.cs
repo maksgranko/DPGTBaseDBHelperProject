@@ -110,12 +110,14 @@ namespace DPGTProject
             // radioButtonExportTables
             // 
             this.radioButtonExportTables.AutoSize = true;
+            this.radioButtonExportTables.Enabled = false;
             this.radioButtonExportTables.Location = new System.Drawing.Point(258, 57);
             this.radioButtonExportTables.Name = "radioButtonExportTables";
             this.radioButtonExportTables.Size = new System.Drawing.Size(202, 17);
             this.radioButtonExportTables.TabIndex = 7;
             this.radioButtonExportTables.Text = "Экспорт базы данных в виде XLSX";
             this.radioButtonExportTables.UseVisualStyleBackColor = true;
+            this.radioButtonExportTables.Visible = false;
             this.radioButtonExportTables.CheckedChanged += new System.EventHandler(this.ReportTypeChanged);
             // 
             // ReportGeneratorForm

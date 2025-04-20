@@ -114,9 +114,20 @@ namespace DPGTProject
         {
             if (dataGridView1.SelectedRows.Count == 0) { MessageBox.Show("Выберите один или более колон!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
             if (MessageBox.Show("Вы точно желаете удалить запись(и)?", "Внимание!", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.No) { return; }
-            for (int i = dataGridView1.SelectedRows.Count - 1; i >= 0; i--)
+            try
             {
-                dataGridView1.Rows.Remove(dataGridView1.SelectedRows[i]);
+                for (int i = dataGridView1.SelectedRows.Count - 1; i >= 0; i--)
+                {
+                    dataGridView1.Rows.Remove(dataGridView1.SelectedRows[i]);
+                }
+            }
+            catch (System.InvalidOperationException ex)
+            {
+                MessageBox.Show("Данную строку невозможно удалить. Подробнее: " + ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Неизвестная ошибка. Подробнее: " + ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -263,8 +274,10 @@ namespace DPGTProject
         private void addrow_btn_Click(object sender, EventArgs e)
         {
             var columnDefinitions = GetTableColumnDefinitions();
-            using (var form = new UniversalAddEditForm(columnDefinitions, TableName))
+            var form = new UniversalAddEditForm(columnDefinitions, TableName);
+            try
             {
+                if (form.GeneratedInsertQuery == null) throw new NullReferenceException("Ошибка формы. Введены некорректные значения.");
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     try
@@ -280,6 +293,10 @@ namespace DPGTProject
                             "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
+            }
+            finally
+            {
+                form.Dispose();
             }
         }
 
@@ -304,7 +321,8 @@ namespace DPGTProject
                 }
             }
 
-            using (var form = new UniversalAddEditForm(columnDefinitions, existingData, TableName))
+            var form = new UniversalAddEditForm(columnDefinitions, existingData, TableName);
+            try
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {
@@ -327,12 +345,25 @@ namespace DPGTProject
                         LoadData();
                         statusLabel.Text = "Запись успешно изменена";
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        MessageBox.Show($"Ошибка при изменении записи: {ex.Message}",
-                            "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        throw;
                     }
                 }
+                else if (form.DialogResult == DialogResult.Cancel)
+                {
+                    MessageBox.Show("Изменение было прервано пользователем.", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show("Произошла ошибка во время изменения или изменение было прервано пользователем.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (System.ObjectDisposedException){}
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при изменении записи: {ex.Message}",
+                    "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

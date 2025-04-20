@@ -26,7 +26,7 @@ namespace DPGTProject
             DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
             if (!SystemConfig.moreExitButtons) exit_btn.Visible = false;
             ReportTypeChanged(null, null);
-            if (!Test.Initialized) radioButtonExportTables.Enabled = false;
+            if (!Test.Initialized || UserConfig.userRole != "Администратор") radioButtonExportTables.Visible = false;
             if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
         }
 
