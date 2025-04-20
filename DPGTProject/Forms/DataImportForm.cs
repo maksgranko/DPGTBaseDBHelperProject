@@ -108,8 +108,31 @@ namespace DPGTProject
                 return;
             }
 
-            // Проверка названий колонок
-            var missingColumns = dbSchema.Keys.Except(_importData.Columns.Cast<DataColumn>().Select(c => c.ColumnName));
+            // Проверка названий колонок (учитываем переведенные имена)
+            var importColumns = _importData.Columns.Cast<DataColumn>().Select(c => c.ColumnName).ToList();
+            var missingColumns = new List<string>();
+
+            // Проверяем каждую колонку из БД
+            foreach (var dbColumn in dbSchema.Keys)
+            {
+                // Ищем оригинальное имя
+                bool found = importColumns.Contains(dbColumn);
+
+                // Если не нашли, ищем переведенное имя
+                if (!found && SystemConfig.ColumnTranslations.TryGetValue(tableName, out var translations))
+                {
+                    if (translations.TryGetValue(dbColumn, out var translatedName))
+                    {
+                        found = importColumns.Contains(translatedName);
+                    }
+                }
+
+                if (!found)
+                {
+                    missingColumns.Add(dbColumn);
+                }
+            }
+
             if (missingColumns.Any())
             {
                 MessageBox.Show($"Отсутствуют обязательные колонки: {string.Join(", ", missingColumns)}",
@@ -118,17 +141,30 @@ namespace DPGTProject
                 return;
             }
 
-            // Проверка типов данных
+            // Проверка типов данных (учитываем переведенные имена)
             var typeErrors = new List<string>();
             foreach (DataColumn column in _importData.Columns)
             {
-                if (dbSchema.TryGetValue(column.ColumnName, out var dbType))
+                string columnName = column.ColumnName;
+                string originalName = columnName;
+
+                // Если имя колонки переведено, получаем оригинальное
+                if (SystemConfig.ColumnTranslations.TryGetValue(tableName, out var translations))
+                {
+                    var reverseTranslations = translations.ToDictionary(x => x.Value, x => x.Key);
+                    if (reverseTranslations.TryGetValue(columnName, out var origName))
+                    {
+                        originalName = origName;
+                    }
+                }
+
+                if (dbSchema.TryGetValue(originalName, out var dbType))
                 {
                     // Простая проверка числовых типов
                     if ((dbType == "int" || dbType == "decimal") &&
                         !double.TryParse(_importData.Rows[0][column].ToString(), out _))
                     {
-                        typeErrors.Add($"{column.ColumnName}: ожидается {dbType}, получено string");
+                        typeErrors.Add($"{columnName}: ожидается {dbType}, получено string");
                     }
                 }
             }

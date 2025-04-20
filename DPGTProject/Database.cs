@@ -300,6 +300,22 @@ namespace DPGTProject
         }
         public static int ImportData(string tableName, DataTable data)
         {
+            // Создаем копию данных для преобразования имен
+            DataTable importData = data.Copy();
+
+            // Преобразуем имена колонок в оригинальные, если они переведены
+            if (SystemConfig.ColumnTranslations.TryGetValue(tableName, out var translations))
+            {
+                var reverseTranslations = translations.ToDictionary(x => x.Value, x => x.Key);
+                foreach (DataColumn column in importData.Columns)
+                {
+                    if (reverseTranslations.TryGetValue(column.ColumnName, out var originalName))
+                    {
+                        column.ColumnName = originalName;
+                    }
+                }
+            }
+
             using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
             {
                 conn.Open();
@@ -310,13 +326,13 @@ namespace DPGTProject
                     try
                     {
                         // Сопоставление столбцов
-                        foreach (DataColumn column in data.Columns)
+                        foreach (DataColumn column in importData.Columns)
                         {
                             bulkCopy.ColumnMappings.Add(column.ColumnName, column.ColumnName);
                         }
 
-                        bulkCopy.WriteToServer(data);
-                        return data.Rows.Count;
+                        bulkCopy.WriteToServer(importData);
+                        return importData.Rows.Count;
                     }
                     catch (Exception ex)
                     {

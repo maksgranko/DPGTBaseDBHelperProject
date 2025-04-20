@@ -229,30 +229,37 @@ namespace DPGTProject
                 }
                 else
                 {
-                    var filterExpression = string.Empty;
+                    var filterParts = new List<string>();
                     foreach (DataColumn column in _originalData.Columns)
                     {
-                        if (filterExpression.Length > 0) filterExpression += " OR ";
+                        string condition = null;
 
                         if (column.DataType == typeof(string))
                         {
-                            filterExpression += $"{column.ColumnName} LIKE '%{filterText}%'";
+                            condition = $"{column.ColumnName} LIKE '%{filterText}%'";
                         }
                         else if (column.DataType == typeof(int) || column.DataType == typeof(decimal))
                         {
                             if (int.TryParse(filterText, out _) || decimal.TryParse(filterText, out _))
                             {
-                                filterExpression += $"{column.ColumnName} = {filterText}";
+                                condition = $"{column.ColumnName} = {filterText}";
                             }
                         }
                         else if (column.DataType == typeof(DateTime))
                         {
                             if (DateTime.TryParse(filterText, out _))
                             {
-                                filterExpression += $"{column.ColumnName} = #{filterText}#";
+                                condition = $"{column.ColumnName} = #{filterText}#";
                             }
                         }
+
+                        if (!string.IsNullOrEmpty(condition))
+                        {
+                            filterParts.Add(condition);
+                        }
                     }
+
+                    string filterExpression = string.Join(" OR ", filterParts);
 
                     _filteredData = _originalData.Clone();
                     var rows = _originalData.Select(filterExpression);
@@ -368,11 +375,11 @@ namespace DPGTProject
                         }
                         catch
                         {
-                             keyValue = selectedRow.Cells[notTranslated].Value;
+                            keyValue = selectedRow.Cells[notTranslated].Value;
                         }
-                            string formattedValue = keyValue is string || keyValue is DateTime
-                            ? $"'{keyValue}'"
-                            : keyValue.ToString();
+                        string formattedValue = keyValue is string || keyValue is DateTime
+                        ? $"'{keyValue}'"
+                        : keyValue.ToString();
 
                         string query = form.GeneratedUpdateQuery
                             .Replace("%TABLENAME%", TableName)
