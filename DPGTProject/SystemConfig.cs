@@ -16,14 +16,14 @@ namespace DPGTProject
 
         #region +++ Глобальные функции +++
         public static bool openEveryWindowInNew = true;                                                                 // Открывать новые окна в каждом новом
-        public static bool moreExitButtons = true;                                                                      // БОЛЬШЕ КНОПОЧЕК "ВЫХОД" !!!
+        public static bool moreExitButtons = false;                                                                     // БОЛЬШЕ КНОПОЧЕК "ВЫХОД" !!!
         #endregion +++ Глобальные функции +++
 
         #region +++  UniversalTableViewerForm функции +++
-        public static bool additionalButtonsInTables = true;                                                            // Добавить кнопки добавления и изменения
-        public static bool exportRightInTables = true;                                                                  // Добавить прямой экспорт
+        public static bool additionalButtonsInTables = false;                                                           // Добавить кнопки добавления и изменения
+        public static bool exportRightInTables = false;                                                                 // Добавить прямой экспорт
         public static bool helpButtonInTables = true;                                                                   // Добавить кнопку помощи
-        public static bool enableFilterInTables = true;                                                                 // Включить фильтр
+        public static bool enableFilterInTables = false;                                                                // Включить фильтр
         public static bool enableSearchInTables = true;                                                                 // Включить поиск
         #endregion +++ UniversalTableViewerForm функции +++
 
@@ -41,7 +41,7 @@ namespace DPGTProject
         #endregion --- Таблицы и автоопределение таблиц ---
 
         #region --- Цветовая тема и иконка ---
-        public static bool applyCustomThemes = true;                                                                    // Применять кастомные темы к окнам
+        public static bool applyCustomThemes = false;                                                                   // Применять кастомные темы к окнам
         public static DesignConfig.ApplicationTheme applicationTheme = DesignConfig.ApplicationTheme.SystemDefault;     // Указать цветовую палитру
         public static Icon Icon = null;                                                                                 // Иконка для всех форм
                                                                                                                         // Пример через ресурсы: 
