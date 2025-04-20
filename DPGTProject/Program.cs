@@ -11,7 +11,7 @@ namespace DPGTProject
         [STAThread]
         static void Main()
         {
-            Test.Init(); // Инициирует тестовые данные для проекта. Убрать, если не используется(вне разработки) В Test.cs прописываются тестовые значения.
+            //Test.Init(); // Инициирует тестовые данные для проекта. Убрать, если не используется(вне разработки) В Test.cs прописываются тестовые значения.
             SystemConfig.Initialize();
             Database.PreCheck();
             Application.EnableVisualStyles();

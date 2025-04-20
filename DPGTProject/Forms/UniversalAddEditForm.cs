@@ -63,7 +63,8 @@ namespace DPGTProject.Forms
             this.ClientSize = new System.Drawing.Size(284, 261);
             this.DoubleBuffered = true;
             this.Name = "UniversalAddEditForm";
-            this.Text = _isEditMode ? $"Редактирование: {_tableName}" : $"Добавление: {_tableName}";
+            string translatedTableName = SystemConfig.TranslateComboBox(_tableName);
+            this.Text = _isEditMode ? $"Редактирование: {translatedTableName}" : $"Добавление: {translatedTableName}";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.DialogResult = DialogResult.Abort;
             DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
@@ -93,9 +94,16 @@ namespace DPGTProject.Forms
             // Сначала создаем все Label чтобы вычислить максимальную ширину
             foreach (var column in _columnDefinitions)
             {
+                string translatedColumnName = column.Key;
+                if (SystemConfig.ColumnTranslations.TryGetValue(_tableName, out var translations) &&
+                    translations.TryGetValue(column.Key, out var translatedName))
+                {
+                    translatedColumnName = translatedName;
+                }
+
                 var label = new Label
                 {
-                    Text = column.Key,
+                    Text = translatedColumnName,
                     Location = new Point(10, yOffset),
                     AutoSize = true
                 };
@@ -269,7 +277,12 @@ namespace DPGTProject.Forms
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка генерации SQL: {ex.Message}");
+                string errorDetails = $"Ошибка при генерации SQL запроса:\n{ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorDetails += $"\nВнутренняя ошибка: {ex.InnerException.Message}";
+                }
+                MessageBox.Show(errorDetails, "Ошибка SQL", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 DialogResult = DialogResult.None;
             }
         }
@@ -285,34 +298,65 @@ namespace DPGTProject.Forms
 
                 foreach (var control in _dynamicControls)
                 {
-                    if (!Database.IsIdentityColumn(_tableName, control.Key))
+                    string untranslatedColumn = control.Key;
+                    if (SystemConfig.ColumnTranslations.TryGetValue(_tableName, out var translations) &&
+                        translations.ContainsValue(control.Key))
                     {
-                        columns.Add(control.Key);
+                        untranslatedColumn = translations.First(x => x.Value == control.Key).Key;
+                    }
+
+                    // Не добавляем identity колонки в INSERT
+                    if (!Database.IsIdentityColumn(_tableName, untranslatedColumn))
+                    {
+                        columns.Add(untranslatedColumn);
                         values.Add(FormatSqlValue(GetControlValue(control.Value)));
                     }
                 }
 
-                return $"INSERT INTO %TABLENAME% ({string.Join(", ", columns)}) VALUES ({string.Join(", ", values)})";
+                string untranslatedTableName = _tableName;
+                if (SystemConfig.TableTranslations.ContainsValue(_tableName))
+                {
+                    untranslatedTableName = SystemConfig.TableTranslations.First(x => x.Value == _tableName).Key;
+                }
+                return $"INSERT INTO {untranslatedTableName} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", values)})";
             }
             else // Update
             {
                 var setParts = new List<string>();
                 foreach (var control in _dynamicControls)
                 {
-                    if (!Database.IsIdentityColumn(_tableName, control.Key))
+                    string untranslatedColumn = control.Key;
+                    if (SystemConfig.ColumnTranslations.TryGetValue(_tableName, out var translations) &&
+                        translations.ContainsValue(control.Key))
                     {
-                        setParts.Add($"{control.Key} = {FormatSqlValue(GetControlValue(control.Value))}");
+                        untranslatedColumn = translations.First(x => x.Value == control.Key).Key;
+                    }
+
+                    // Не добавляем identity колонки в SET
+                    if (!Database.IsIdentityColumn(_tableName, untranslatedColumn))
+                    {
+                        setParts.Add($"{untranslatedColumn} = {FormatSqlValue(GetControlValue(control.Value))}");
                     }
                 }
-                return $"UPDATE %TABLENAME% SET {string.Join(", ", setParts)} WHERE %WHERE%";
+                string untranslatedTableName = _tableName;
+                if (SystemConfig.TableTranslations.ContainsValue(_tableName))
+                {
+                    untranslatedTableName = SystemConfig.TableTranslations.First(x => x.Value == _tableName).Key;
+                }
+                return $"UPDATE {untranslatedTableName} SET {string.Join(", ", setParts)} WHERE %WHERE%";
             }
         }
 
         private string FormatSqlValue(object value)
         {
             if (value == null) return "NULL";
-            if (value is string) return $"'{value}'";
+            if (value is string strValue)
+            {
+                // Экранируем одинарные кавычки для SQL
+                return $"'{strValue.Replace("'", "''")}'";
+            }
             if (value is DateTime dt) return $"'{dt:yyyy-MM-dd HH:mm:ss}'";
+            if (value is bool boolValue) return boolValue ? "1" : "0";
             return value.ToString();
         }
     }

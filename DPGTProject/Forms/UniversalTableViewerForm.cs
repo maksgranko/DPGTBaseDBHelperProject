@@ -3,6 +3,7 @@ using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace DPGTProject
@@ -33,7 +34,7 @@ namespace DPGTProject
             DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
             if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
             dataGridView1.DataError += DataGridView1_DataError;
-            if (!SystemConfig.exportRightInTables) { export_btn.Visible = false;}
+            if (!SystemConfig.exportRightInTables) { export_btn.Visible = false; }
             if (!SystemConfig.helpButtonInTables) { help_btn.Visible = false; toolStripSeparator2.Visible = false; }
             if (!SystemConfig.enableFilterInTables)
             {
@@ -217,47 +218,51 @@ namespace DPGTProject
 
         private void ApplyFilter(string filterText)
         {
-            if (_originalData == null) return;
-            if (filterText == null) { LoadData(); }
-            _currentFilter = filterText;
-            if (string.IsNullOrEmpty(filterText))
+            try
             {
-                _filteredData = _originalData.Copy();
-            }
-            else
-            {
-                var filterExpression = string.Empty;
-                foreach (DataColumn column in _originalData.Columns)
+                if (_originalData == null) return;
+                if (filterText == null) { LoadData(); }
+                _currentFilter = filterText;
+                if (string.IsNullOrEmpty(filterText))
                 {
-                    if (filterExpression.Length > 0) filterExpression += " OR ";
+                    _filteredData = _originalData.Copy();
+                }
+                else
+                {
+                    var filterExpression = string.Empty;
+                    foreach (DataColumn column in _originalData.Columns)
+                    {
+                        if (filterExpression.Length > 0) filterExpression += " OR ";
 
-                    if (column.DataType == typeof(string))
-                    {
-                        filterExpression += $"{column.ColumnName} LIKE '%{filterText}%'";
-                    }
-                    else if (column.DataType == typeof(int) || column.DataType == typeof(decimal))
-                    {
-                        if (int.TryParse(filterText, out _) || decimal.TryParse(filterText, out _))
+                        if (column.DataType == typeof(string))
                         {
-                            filterExpression += $"{column.ColumnName} = {filterText}";
+                            filterExpression += $"{column.ColumnName} LIKE '%{filterText}%'";
+                        }
+                        else if (column.DataType == typeof(int) || column.DataType == typeof(decimal))
+                        {
+                            if (int.TryParse(filterText, out _) || decimal.TryParse(filterText, out _))
+                            {
+                                filterExpression += $"{column.ColumnName} = {filterText}";
+                            }
+                        }
+                        else if (column.DataType == typeof(DateTime))
+                        {
+                            if (DateTime.TryParse(filterText, out _))
+                            {
+                                filterExpression += $"{column.ColumnName} = #{filterText}#";
+                            }
                         }
                     }
-                    else if (column.DataType == typeof(DateTime))
+
+                    _filteredData = _originalData.Clone();
+                    var rows = _originalData.Select(filterExpression);
+                    foreach (var row in rows)
                     {
-                        if (DateTime.TryParse(filterText, out _))
-                        {
-                            filterExpression += $"{column.ColumnName} = #{filterText}#";
-                        }
+                        _filteredData.ImportRow(row);
                     }
                 }
-
-                _filteredData = _originalData.Clone();
-                var rows = _originalData.Select(filterExpression);
-                foreach (var row in rows)
-                {
-                    _filteredData.ImportRow(row);
-                }
             }
+            catch { MessageBox.Show("Не удалось применить фильтр!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error); }
 
             dataGridView1.DataSource = Database.Translate(_filteredData, TableName);
             statusLabel.Text = $"Отфильтровано записей: {_filteredData.Rows.Count}";
@@ -273,6 +278,7 @@ namespace DPGTProject
             var columns = new Dictionary<string, object>();
             foreach (DataColumn column in _originalData.Columns)
             {
+                // Используем оригинальные имена столбцов
                 columns[column.ColumnName] = column.DataType;
             }
             return columns;
@@ -328,7 +334,9 @@ namespace DPGTProject
             {
                 if (cell.OwningColumn.Name != "RowError")
                 {
-                    existingData[cell.OwningColumn.Name] = cell.Value;
+                    // Используем оригинальное имя столбца (как в DataTable)
+                    string columnName = cell.OwningColumn.Name;
+                    existingData[columnName] = cell.Value;
                 }
             }
 
@@ -342,9 +350,27 @@ namespace DPGTProject
                         string keyColumn = _originalData.PrimaryKey.Length > 0
                             ? _originalData.PrimaryKey[0].ColumnName
                             : _originalData.Columns[0].ColumnName;
+                        string notTranslated = keyColumn;
 
-                        object keyValue = selectedRow.Cells[keyColumn].Value;
-                        string formattedValue = keyValue is string || keyValue is DateTime
+                        // Получаем оригинальное имя колонки из переведенного
+                        if (SystemConfig.ColumnTranslations.TryGetValue(TableName, out var translations))
+                        {
+                            var originalName = translations.FirstOrDefault(x => x.Value == keyColumn).Key;
+                            if (originalName != null)
+                            {
+                                keyColumn = originalName;
+                            }
+                        }
+                        object keyValue = null;
+                        try
+                        {
+                            keyValue = selectedRow.Cells[keyColumn].Value;
+                        }
+                        catch
+                        {
+                             keyValue = selectedRow.Cells[notTranslated].Value;
+                        }
+                            string formattedValue = keyValue is string || keyValue is DateTime
                             ? $"'{keyValue}'"
                             : keyValue.ToString();
 
