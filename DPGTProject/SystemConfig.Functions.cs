@@ -6,7 +6,6 @@ namespace DPGTProject
 {
     public static partial class SystemConfig
     {
-
         public static string TranslateComboBox(string value)
         {
             return TableTranslations.TryGetValue(value, out var translation)

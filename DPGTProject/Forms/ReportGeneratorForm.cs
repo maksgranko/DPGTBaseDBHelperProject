@@ -12,9 +12,7 @@ namespace DPGTProject
 {
     public partial class ReportGeneratorForm : Form
     {
-        private DataTable _translatedData;
-        private RadioButton radioPredefinedReport;
-        private RadioButton radioNormalTable;
+        public DataTable _translatedData;
 
         public ReportGeneratorForm(string[] ReportsNames) : this()
         {
@@ -57,7 +55,7 @@ namespace DPGTProject
                     .ToArray());
             }
         }
-        private void GenerateReport(object sender, EventArgs e)
+        public void GenerateReport(object sender, EventArgs e)
         {
             try
             {
@@ -79,6 +77,7 @@ namespace DPGTProject
                 }
                 else
                 {
+                    if (reportData == null) MessageBox.Show("Нет данных для отображения!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     switch (reportTypeComboBox.SelectedItem?.ToString())
                     {
 #pragma warning disable CS0162
@@ -95,7 +94,6 @@ namespace DPGTProject
                             MessageBox.Show("Пожалуйста, выберите тип отчёта из списка", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             return;
                     }
-                    if (reportData == null) MessageBox.Show("Нет данных для отображения!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     _translatedData = reportData;
                     dataGridView1.DataSource = _translatedData;
 #pragma warning restore CS0162
@@ -108,7 +106,7 @@ namespace DPGTProject
             }
         }
 
-        private void ExportReport(object sender, EventArgs e)
+        public void ExportReport(object sender, EventArgs e)
         {
             if (radioButtonExportTables.Checked)
             {

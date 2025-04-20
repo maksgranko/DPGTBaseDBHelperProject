@@ -145,10 +145,12 @@ namespace DPGTProject
         #endregion
 
         private System.Windows.Forms.DataGridView dataGridView1;
-        private System.Windows.Forms.ComboBox reportTypeComboBox;
-        private System.Windows.Forms.Button generate_btn;
         private System.Windows.Forms.Button export_btn;
         private System.Windows.Forms.Button exit_btn;
-        private System.Windows.Forms.RadioButton radioButtonExportTables;
+        public System.Windows.Forms.RadioButton radioPredefinedReport;
+        public System.Windows.Forms.RadioButton radioNormalTable;
+        public System.Windows.Forms.ComboBox reportTypeComboBox;
+        public System.Windows.Forms.Button generate_btn;
+        public System.Windows.Forms.RadioButton radioButtonExportTables;
     }
 }

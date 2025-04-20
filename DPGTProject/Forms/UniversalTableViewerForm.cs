@@ -33,22 +33,24 @@ namespace DPGTProject
             DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
             if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
             dataGridView1.DataError += DataGridView1_DataError;
-            if (!SystemConfig.enableFilter)
+            if (!SystemConfig.exportRightInTables) { export_btn.Visible = false;}
+            if (!SystemConfig.helpButtonInTables) { help_btn.Visible = false; toolStripSeparator2.Visible = false; }
+            if (!SystemConfig.enableFilterInTables)
             {
                 toolStripSeparator2.Visible = false;
                 filter_label.Visible = false;
                 filter_tb.Visible = false;
             }
-            if (!SystemConfig.enableSearch)
+            if (!SystemConfig.enableSearchInTables)
             {
-                toolStripSeparator4.Visible = false;
+                toolStripSeparator1.Visible = false;
                 find_label.Visible = false;
                 find_next_btn.Visible = false;
                 find_previous_btn.Visible = false;
                 find_tb.Visible = false;
             }
-            if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
-            if (!SystemConfig.additionalButtons) { editrow_btn.Visible = false; addrow_btn.Visible = false; }
+            if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; toolStripSeparator5.Visible = false; }
+            if (!SystemConfig.additionalButtonsInTables) { editrow_btn.Visible = false; addrow_btn.Visible = false; }
         }
 
         private void DataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
@@ -112,7 +114,7 @@ namespace DPGTProject
 
         private void removerow_btn_Click(object sender, EventArgs e)
         {
-            if (dataGridView1.SelectedRows.Count == 0) { MessageBox.Show("Выберите один или более колон!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
+            if (dataGridView1.SelectedRows.Count == 0) { MessageBox.Show("Выберите одну или более строк!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
             if (MessageBox.Show("Вы точно желаете удалить запись(и)?", "Внимание!", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.No) { return; }
             try
             {
@@ -133,14 +135,19 @@ namespace DPGTProject
 
         private void help_btn_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Вы можете использовать кнопки на верхней панели.\n" +
-                "Дополнительные подсказки:\n" +
-                "1. Для фильтрации данных используйте кнопку 'Фильтр'\n" +
-                "2. Для экспорта нажмите 'Экспорт'\n" +
-                "3. Редактируйте напрямую в полях\n" +
-                "4. Для удаления выделите строки и нажмите 'Удалить'\n" +
-                "5. Для поиска введите текст в поле 'Найти' и используйте кнопки ↑↓",
-                "Справка", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            List<string> helpList = new List<string> { };
+            string text = "Вы можете использовать кнопки на верхней панели.\nДополнительные подсказки:\n";
+            if (SystemConfig.enableFilterInTables) helpList.Add("Для фильтрации данных используйте кнопку \"Фильтр\".");
+            if (SystemConfig.exportRightInTables) helpList.Add("Для экспорта нажмите \"Экспорт\".");
+            helpList.Add("Редактируйте напрямую в полях.");
+            helpList.Add("Для удаления выделите строки и нажмите \"Удалить\".");
+            if (SystemConfig.enableSearchInTables) helpList.Add("Для поиска введите текст в поле \"Найти\" и используйте кнопки ↑↓.");
+            if (SystemConfig.moreExitButtons) helpList.Add("Для того, чтобы закрыть форму, вы также можете использовать кнопку \"Выход\".");
+            for (int i = 0; i < helpList.Count; i++)
+            {
+                text += $"{i + 1}. {helpList[i]}\n";
+            }
+            MessageBox.Show(text, "Справка", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void FindNext_Click(object sender, EventArgs e)
@@ -277,9 +284,9 @@ namespace DPGTProject
             var form = new UniversalAddEditForm(columnDefinitions, TableName);
             try
             {
-                if (form.GeneratedInsertQuery == null) throw new NullReferenceException("Ошибка формы. Введены некорректные значения.");
                 if (form.ShowDialog() == DialogResult.OK)
                 {
+                    if (form.GeneratedInsertQuery == null) throw new NullReferenceException("Ошибка формы. Вероятно, введены некорректные значения.");
                     try
                     {
                         string query = form.GeneratedInsertQuery.Replace("%TABLENAME%", TableName);
@@ -287,12 +294,16 @@ namespace DPGTProject
                         LoadData();
                         statusLabel.Text = "Запись успешно добавлена";
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        MessageBox.Show($"Ошибка при добавлении записи: {ex.Message}",
-                            "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        throw;
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при добавлении записи: {ex.Message}",
+                    "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
@@ -359,11 +370,40 @@ namespace DPGTProject
                     MessageBox.Show("Произошла ошибка во время изменения или изменение было прервано пользователем.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-            catch (System.ObjectDisposedException){}
+            catch (System.ObjectDisposedException) { }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка при изменении записи: {ex.Message}",
                     "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void export_btn_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (dataGridView1.DataSource == null)
+                {
+                    MessageBox.Show("Нет данных для экспорта", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                var reportForm = new ReportGeneratorForm();
+                reportForm.radioNormalTable.Checked = true;
+
+                // Установить выбранную таблицу в комбобокс
+                reportForm.reportTypeComboBox.SelectedItem = SystemConfig.TranslateComboBox(_tableName);
+
+                // Установить данные для экспорта
+                reportForm._translatedData = (DataTable)dataGridView1.DataSource;
+
+                // Вызвать экспорт
+                reportForm.GenerateReport(null, null);
+                reportForm.ExportReport(null, null);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

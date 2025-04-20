@@ -13,11 +13,20 @@ namespace DPGTProject
         #endregion --- Работа с базой данных ---
 
         #region --- Дополнительные функции ---
-        public static bool enableFilter = true;                                                                         // Включить фильтр в универсальной форме
-        public static bool enableSearch = true;                                                                         // Включить поиск в универсальной форме
+
+        #region +++ Глобальные функции +++
         public static bool openEveryWindowInNew = true;                                                                 // Открывать новые окна в каждом новом
         public static bool moreExitButtons = true;                                                                      // БОЛЬШЕ КНОПОЧЕК "ВЫХОД" !!!
-        public static bool additionalButtons = true;                                                                    // Добавляет кнопки добавления и изменения в UniversalTableViewerForm.cs
+        #endregion +++ Глобальные функции +++
+
+        #region +++  UniversalTableViewerForm функции +++
+        public static bool additionalButtonsInTables = true;                                                            // Добавить кнопки добавления и изменения
+        public static bool exportRightInTables = true;                                                                  // Добавить прямой экспорт
+        public static bool helpButtonInTables = true;                                                                   // Добавить кнопку помощи
+        public static bool enableFilterInTables = true;                                                                 // Включить фильтр
+        public static bool enableSearchInTables = true;                                                                 // Включить поиск
+        #endregion +++ UniversalTableViewerForm функции +++
+
         #endregion --- Дополнительные функции ---
 
         #region --- Роли, необходимые для программы ---
