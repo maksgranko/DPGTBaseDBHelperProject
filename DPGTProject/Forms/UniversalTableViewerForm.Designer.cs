@@ -83,7 +83,7 @@ namespace DPGTProject
             this.save_btn.Name = "save_btn";
             this.save_btn.Size = new System.Drawing.Size(70, 22);
             this.save_btn.Text = "Сохранить";
-            this.save_btn.Click += new System.EventHandler(this.btnSave_Click);
+            this.save_btn.Click += new System.EventHandler(this.save_btn_Click);
             // 
             // refresh_btn
             // 

@@ -1,4 +1,5 @@
-﻿using DPGTProject.Forms;
+﻿using DPGTProject.Configs;
+using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +45,15 @@ namespace DPGTProject
             if (UserConfig.userRole == "Администратор") tables = tables.Append("Users").ToArray();
             //Здесь прописывать условия в зависимости от ролей. Выше пример. Перед прописыванием ролей, их необходимо прописать в SystemConfig.cs
             table_cb.Items.AddRange(tables.Select(t => SystemConfig.TranslateComboBox(t)).ToArray());
+
+            // Проверка прав на экспорт/импорт
+            bool hasExportRight = tables.Any(t =>
+                RoleManager.CheckAccess(UserConfig.userRole, t, "export"));
+            bool hasImportRight = tables.Any(t =>
+                RoleManager.CheckAccess(UserConfig.userRole, t, "import"));
+
+            import_btn.Visible = hasImportRight;
+            export_btn.Visible = hasExportRight;
         }
 
         private void unlogin_btn_Click(object sender, EventArgs e)

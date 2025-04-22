@@ -28,10 +28,65 @@ namespace DPGTProject
         public static bool enableSearchInTables = true;                                                                 // Включить поиск
         #endregion +++ UniversalTableViewerForm функции +++
 
+        #region +++  RegisterForm функции +++
+        public static bool addRolesWhenRegistering = true;                                                            // Добавить выбор роли при регистрации
+        #endregion +++ RegisterForm функции +++
+
         #endregion --- Дополнительные функции ---
 
         #region --- Роли, необходимые для программы ---
-        public static string[] roles = new string[] { "Администратор", "Менеджер" };                                    // Здесь прописываются роли!
+        public static string[] roles = new string[] { "Администратор", "Менеджер","Арбузик" };                                    // Здесь прописываются роли!
+
+        #region +++ Права, индивидуальные к каждой РОЛИ ПО УМОЛЧАНИЮ +++
+        public static Dictionary<string, TablePermission> DefaultRolePermissions = new Dictionary<string, TablePermission>()
+        {
+            ["default"] = new TablePermission                                                                           // default - права для ВСЕХ
+            {
+                CanRead = true,
+                CanWrite = false,
+                CanDelete = false,
+                CanExport = false,
+                CanImport = false
+            },
+            ["Администратор"] = new TablePermission                                                                     // Администратор - права для Администратора
+            {
+                CanRead = true,
+                CanWrite = true,
+                CanDelete = true,
+                CanExport = true,
+                CanImport = true
+            },
+            ["Менеджер"] = new TablePermission                                                                          // Менеджер - права для Менеджера
+            {
+                CanRead = true,
+                CanWrite = false,
+                CanDelete = false,
+                CanExport = false,
+                CanImport = false
+            }
+        };
+        #endregion +++ Права, индивидуальные к каждой РОЛИ ПО УМОЛЧАНИЮ +++
+
+        #region +++ Права, индивидуальные ПО РОЛЯМ к каждой ТАБЛИЦЕ +++
+        // Можно добавить другие таблицы по аналогии
+        public static Dictionary<string, List<TablePermission>> RolePermissions = new Dictionary<string, List<TablePermission>>()
+        {
+            ["Администратор"] = new List<TablePermission>
+            { /* ^РОЛЬ^, которой назначаются права ниже.*/
+                new TablePermission {
+                    TableName = "Users" , // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
+                    CanRead = true,       // <--- Может ли просматривать?
+                    CanWrite = true,      // <--- Может ли записывать/редактировать?
+                    CanDelete = true,     // <--- Может ли удалять?
+                    CanExport = true,     // <--- Может ли экспортировать?
+                    CanImport = true      // <--- Может ли импортировать?
+                },
+                // Можно добавлять таблицы дальше, аналогично.
+            }, 
+            // Можно добавлять другие роли, аналогично.
+        };
+        #endregion +++ Права, индивидуальные ПО РОЛЯМ к каждой ТАБЛИЦЕ +++
+
         #endregion --- Роли, необходимые для программы ---
 
         #region --- Таблицы и автоопределение таблиц ---

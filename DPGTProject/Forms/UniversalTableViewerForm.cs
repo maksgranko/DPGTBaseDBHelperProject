@@ -1,3 +1,4 @@
+using DPGTProject.Configs;
 using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
@@ -31,24 +32,40 @@ namespace DPGTProject
         {
             InitializeComponent();
             dataGridView1.DataError += DataGridView1_DataError;
-            if (!SystemConfig.exportRightInTables) { export_btn.Visible = false; }
-            if (!SystemConfig.helpButtonInTables) { help_btn.Visible = false; toolStripSeparator2.Visible = false; }
-            if (!SystemConfig.enableFilterInTables)
-            {
-                toolStripSeparator2.Visible = false;
-                filter_label.Visible = false;
-                filter_tb.Visible = false;
-            }
-            if (!SystemConfig.enableSearchInTables)
-            {
-                toolStripSeparator1.Visible = false;
-                find_label.Visible = false;
-                find_next_btn.Visible = false;
-                find_previous_btn.Visible = false;
-                find_tb.Visible = false;
-            }
-            if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; toolStripSeparator5.Visible = false; }
-            if (!SystemConfig.additionalButtonsInTables) { editrow_btn.Visible = false; addrow_btn.Visible = false; }
+
+            // Обновляем видимость кнопок в зависимости от прав
+            UpdateButtonsVisibility();
+        }
+
+        private void UpdateButtonsVisibility()
+        {
+            // Проверяем права текущего пользователя
+            string role = UserConfig.userRole;
+            string table = _tableName ?? "";
+
+            export_btn.Visible = SystemConfig.exportRightInTables &&
+                RoleManager.CheckAccess(role, table, "export");
+            help_btn.Visible = SystemConfig.helpButtonInTables;
+            toolStripSeparator2.Visible = help_btn.Visible || export_btn.Visible;
+
+            filter_label.Visible = SystemConfig.enableFilterInTables;
+            filter_tb.Visible = SystemConfig.enableFilterInTables;
+            toolStripSeparator2.Visible = filter_label.Visible || help_btn.Visible || export_btn.Visible;
+
+            find_label.Visible = SystemConfig.enableSearchInTables;
+            find_next_btn.Visible = SystemConfig.enableSearchInTables;
+            find_previous_btn.Visible = SystemConfig.enableSearchInTables;
+            find_tb.Visible = SystemConfig.enableSearchInTables;
+            toolStripSeparator1.Visible = find_label.Visible;
+
+            exit_btn.Visible = SystemConfig.moreExitButtons;
+            toolStripSeparator5.Visible = exit_btn.Visible;
+
+            addrow_btn.Visible = SystemConfig.additionalButtonsInTables &&
+                RoleManager.CheckAccess(role, table, "write");
+            editrow_btn.Visible = SystemConfig.additionalButtonsInTables &&
+                RoleManager.CheckAccess(role, table, "write");
+            removerow_btn.Visible = RoleManager.CheckAccess(role, table, "delete");
         }
 
         private void DataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
@@ -87,12 +104,27 @@ namespace DPGTProject
             }
         }
 
-        private void btnSave_Click(object sender, EventArgs e)
+        private void save_btn_Click(object sender, EventArgs e)
         {
+            if (!RoleManager.CheckAccess(UserConfig.userRole, _tableName, "write"))
+            {
+                MessageBox.Show("У вас нет прав на редактирование записей", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             try
             {
                 var changedData = (DataTable)dataGridView1.DataSource;
                 var untranslated = Database.Untranslate(changedData, TableName);
+
+                // Проверяем, есть ли удаленные строки
+                if (untranslated.GetChanges(DataRowState.Deleted) != null &&
+                    !RoleManager.CheckAccess(UserConfig.userRole, _tableName, "delete"))
+                {
+                    MessageBox.Show("У вас нет прав на удаление записей", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
                 Database.BulkUpdate(TableName, untranslated);
             }
             catch
@@ -391,7 +423,7 @@ namespace DPGTProject
                 }
                 else if (form.DialogResult == DialogResult.Cancel)
                 {
-                    MessageBox.Show("Изменение было прервано пользователем.", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
                 }
                 else
                 {
