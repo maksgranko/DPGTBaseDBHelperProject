@@ -1,4 +1,3 @@
-using DPGTProject.Configs;
 using DPGTProject.Forms;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
@@ -24,7 +23,6 @@ namespace DPGTProject
             InitializeComponent();
             ReportTypeChanged(null, null);
             if (!Test.Initialized || UserConfig.userRole != "Администратор") radioButtonExportTables.Visible = false;
-            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
         }
 
         private void ReportTypeChanged(object sender, EventArgs e)
@@ -76,22 +74,27 @@ namespace DPGTProject
                 }
                 else
                 {
-                    if (reportData == null) MessageBox.Show("Нет данных для отображения!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     switch (reportTypeComboBox.SelectedItem?.ToString())
                     {
 #pragma warning disable CS0162
                         // Здесь алгоритм репортов.
                         case "Отчёт 1":
-                            reportData = Database.Translate(reportData, "Пример 1"); // как переводить колоны у таблиц
-                            throw new Exception("Задайте корректный алгоритм репорта!");
+                            reportData = Database.GetDataTableFromSQL("Здесь_Вы_Задаёте_SQL-запрос, ну это к примеру"); // Получение данных
+                            reportData = Database.Translate(reportData, "Пример 1");                                    // Как переводить колоны у таблиц
+                            throw new NotImplementedException("Задайте корректный алгоритм репорта!");                  // Стереть, после того, как функция будет реализована корректно
                             break;
                         case "Отчёт 2":
-                            reportData = Database.Translate(reportData, "Пример 2"); // как переводить колоны у таблиц
-                            throw new Exception("Задайте корректный алгоритм репорта!");
+                            // ...
+                            throw new NotImplementedException("Задайте корректный алгоритм репорта!");
                             break;
                         default:
                             MessageBox.Show("Пожалуйста, выберите тип отчёта из списка", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             return;
+                    }
+                    if (reportData == null)
+                    {
+                        MessageBox.Show("Нет данных для отображения!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
                     }
                     _translatedData = reportData;
                     dataGridView1.DataSource = _translatedData;

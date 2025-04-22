@@ -39,18 +39,39 @@ namespace DPGTProject
             hello_lb.Text = "Здравствуй, " + UserConfig.userLogin + "!";
             role_lb.Text = "Ваша роль: " + UserConfig.userRole;
 
-            // В SystemConfig.cs переменная tables содержит названия таблиц, редактировать там
-            tables = SystemConfig.tables;
-            if (tables == null || tables.Length == 0) throw new NullReferenceException("Заполните список отображаемых таблиц!");
-            if (UserConfig.userRole == "Администратор") tables = tables.Append("Users").ToArray();
-            //Здесь прописывать условия в зависимости от ролей. Выше пример. Перед прописыванием ролей, их необходимо прописать в SystemConfig.cs
+            // Получаем список таблиц
+            tables = SystemConfig.tableAutodetect
+                ? Database.GetTables(false) // Получаем таблицы из БД если включено автоопределение
+                : SystemConfig.tables; // Иначе берем из конфига
+
+            if (tables == null || tables.Length == 0)
+                throw new NullReferenceException("Не найдено ни одной таблицы!");
+
+            // Фильтруем таблицы по правам чтения
+            var filteredTables = new List<string>();
+            foreach (var table in tables)
+            {
+                // Проверяем права через RoleManager или дефолтные права
+                bool hasAccess = RoleManager.CheckAccess(UserConfig.userRole, table, "read") ||
+                               (SystemConfig.DefaultRolePermissions.ContainsKey(UserConfig.userRole) &&
+                                SystemConfig.DefaultRolePermissions[UserConfig.userRole].CanRead);
+
+                if (hasAccess)
+                {
+                    filteredTables.Add(table);
+                }
+            }
+            tables = filteredTables.Distinct().ToArray();
+
+            // Для отладки: логируем доступные таблицы
+            System.Diagnostics.Debug.WriteLine($"Доступные таблицы для {UserConfig.userRole}: {string.Join(", ", tables)}");
+
+
             table_cb.Items.AddRange(tables.Select(t => SystemConfig.TranslateComboBox(t)).ToArray());
 
             // Проверка прав на экспорт/импорт
-            bool hasExportRight = tables.Any(t =>
-                RoleManager.CheckAccess(UserConfig.userRole, t, "export"));
-            bool hasImportRight = tables.Any(t =>
-                RoleManager.CheckAccess(UserConfig.userRole, t, "import"));
+            bool hasExportRight = tables.Any(t => RoleManager.CheckAccess(UserConfig.userRole, t, "export"));
+            bool hasImportRight = tables.Any(t => RoleManager.CheckAccess(UserConfig.userRole, t, "import"));
 
             import_btn.Visible = hasImportRight;
             export_btn.Visible = hasExportRight;
@@ -59,6 +80,17 @@ namespace DPGTProject
         private void unlogin_btn_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("Вы точно желаете выйти из аккаунта?", "Внимание!", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.No) return;
+
+            // Закрываем все открытые формы
+            foreach (var form in openForms.Values.ToList())
+            {
+                form.Close();
+            }
+            openForms.Clear();
+
+            // Очищаем combobox
+            table_cb.Items.Clear();
+
             UserConfig.Logout();
             this.DialogResult = DialogResult.Retry;
             this.Close();

@@ -41,7 +41,7 @@
             this.password_verify_tb = new System.Windows.Forms.TextBox();
             this.hide_password_btn = new System.Windows.Forms.Button();
             this.roles_cb = new System.Windows.Forms.ComboBox();
-            this.label5 = new System.Windows.Forms.Label();
+            this.roles_label = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // register_btn
@@ -168,21 +168,21 @@
             this.roles_cb.Size = new System.Drawing.Size(161, 21);
             this.roles_cb.TabIndex = 4;
             // 
-            // label5
+            // roles_label
             // 
-            this.label5.Location = new System.Drawing.Point(24, 172);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(109, 21);
-            this.label5.TabIndex = 13;
-            this.label5.Text = "Выбор роли:";
-            this.label5.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.roles_label.Location = new System.Drawing.Point(24, 172);
+            this.roles_label.Name = "roles_label";
+            this.roles_label.Size = new System.Drawing.Size(109, 21);
+            this.roles_label.TabIndex = 13;
+            this.roles_label.Text = "Выбор роли:";
+            this.roles_label.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // RegisterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(325, 347);
-            this.Controls.Add(this.label5);
+            this.Controls.Add(this.roles_label);
             this.Controls.Add(this.roles_cb);
             this.Controls.Add(this.hide_password_btn);
             this.Controls.Add(this.label4);
@@ -223,7 +223,7 @@
         private System.Windows.Forms.TextBox password_verify_tb;
         private System.Windows.Forms.Button hide_password_btn;
         private System.Windows.Forms.ComboBox roles_cb;
-        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Label roles_label;
     }
 }
 

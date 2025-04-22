@@ -32,19 +32,14 @@ namespace DPGTProject
         {
             InitializeComponent();
             dataGridView1.DataError += DataGridView1_DataError;
-
-            // Обновляем видимость кнопок в зависимости от прав
-            UpdateButtonsVisibility();
         }
 
         private void UpdateButtonsVisibility()
         {
-            // Проверяем права текущего пользователя
             string role = UserConfig.userRole;
             string table = _tableName ?? "";
 
-            export_btn.Visible = SystemConfig.exportRightInTables &&
-                RoleManager.CheckAccess(role, table, "export");
+            export_btn.Visible = SystemConfig.exportRightInTables && RoleManager.CheckAccess(role, table, "export");
             help_btn.Visible = SystemConfig.helpButtonInTables;
             toolStripSeparator2.Visible = help_btn.Visible || export_btn.Visible;
 
@@ -61,11 +56,10 @@ namespace DPGTProject
             exit_btn.Visible = SystemConfig.moreExitButtons;
             toolStripSeparator5.Visible = exit_btn.Visible;
 
-            addrow_btn.Visible = SystemConfig.additionalButtonsInTables &&
-                RoleManager.CheckAccess(role, table, "write");
-            editrow_btn.Visible = SystemConfig.additionalButtonsInTables &&
-                RoleManager.CheckAccess(role, table, "write");
-            removerow_btn.Visible = RoleManager.CheckAccess(role, table, "delete");
+            addrow_btn.Visible = SystemConfig.additionalButtonsInTables && RoleManager.CheckAccess(role, table, "write");
+            editrow_btn.Visible = SystemConfig.additionalButtonsInTables && RoleManager.CheckAccess(role, table, "write");
+            save_btn.Visible = RoleManager.CheckAccess(role, table, "write");
+            removerow_btn.Visible = RoleManager.CheckAccess(role, table, "write") && RoleManager.CheckAccess(role, table, "delete");
         }
 
         private void DataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
@@ -87,6 +81,7 @@ namespace DPGTProject
         public UniversalTableViewerForm(string tableName) : this()
         {
             TableName = tableName;
+            UpdateButtonsVisibility();
         }
 
         private void LoadData()
@@ -152,6 +147,7 @@ namespace DPGTProject
                 {
                     dataGridView1.Rows.Remove(dataGridView1.SelectedRows[i]);
                 }
+                save_btn_Click(null, null);
             }
             catch (System.InvalidOperationException ex)
             {
@@ -167,10 +163,10 @@ namespace DPGTProject
         {
             List<string> helpList = new List<string> { };
             string text = "Вы можете использовать кнопки на верхней панели.\nДополнительные подсказки:\n";
-            if (SystemConfig.enableFilterInTables) helpList.Add("Для фильтрации данных используйте кнопку \"Фильтр\".");
             if (SystemConfig.exportRightInTables) helpList.Add("Для экспорта нажмите \"Экспорт\".");
             if (!SystemConfig.additionalButtonsInTables) helpList.Add("Редактируйте напрямую в полях.");
-            helpList.Add("Для удаления выделите строки и нажмите \"Удалить строку\".");
+            if (!RoleManager.CheckAccess(UserConfig.userRole, TableName, "delete")) helpList.Add("Для удаления выделите строки и нажмите \"Удалить строку\".");
+            if (SystemConfig.enableFilterInTables) helpList.Add("Для фильтрации данных используйте текстовое поле \"Фильтр\" и кнопку \"Enter\".");
             if (SystemConfig.enableSearchInTables) helpList.Add("Для поиска введите текст в поле \"Найти\" и используйте кнопки ↑↓.");
             if (SystemConfig.moreExitButtons) helpList.Add("Для того, чтобы закрыть форму, вы также можете использовать кнопку \"Выход\".");
             for (int i = 0; i < helpList.Count; i++)

@@ -16,33 +16,33 @@ namespace DPGTProject
         #region --- Дополнительные функции ---
 
         #region +++ Глобальные функции +++
-        public static bool openEveryWindowInNew = true;                                                                 // Открывать новые окна в каждом новом
-        public static bool moreExitButtons = false;                                                                     // БОЛЬШЕ КНОПОЧЕК "ВЫХОД" !!!
+        public static bool openEveryWindowInNew = true;                              // Открывать новые окна в каждом новом
+        public static bool moreExitButtons = false;                                  // БОЛЬШЕ КНОПОЧЕК "ВЫХОД" !!!
         #endregion +++ Глобальные функции +++
 
         #region +++  UniversalTableViewerForm функции +++
-        public static bool additionalButtonsInTables = true;                                                            // Добавить кнопки добавления и изменения
-        public static bool exportRightInTables = false;                                                                 // Добавить прямой экспорт
-        public static bool helpButtonInTables = true;                                                                   // Добавить кнопку помощи
-        public static bool enableFilterInTables = false;                                                                // Включить фильтр
-        public static bool enableSearchInTables = true;                                                                 // Включить поиск
+        public static bool additionalButtonsInTables = true;                         // Добавить кнопки добавления и изменения
+        public static bool exportRightInTables = false;                              // Добавить прямой экспорт
+        public static bool helpButtonInTables = true;                                // Добавить кнопку помощи
+        public static bool enableFilterInTables = false;                             // Включить фильтр
+        public static bool enableSearchInTables = true;                              // Включить поиск
         #endregion +++ UniversalTableViewerForm функции +++
 
         #region +++  RegisterForm функции +++
-        public static bool addRolesWhenRegistering = true;                                                            // Добавить выбор роли при регистрации
+        public static bool addRolesWhenRegistering = false;                                                            // Добавить выбор роли при регистрации
         #endregion +++ RegisterForm функции +++
 
         #endregion --- Дополнительные функции ---
 
         #region --- Роли, необходимые для программы ---
-        public static string[] roles = new string[] { "Администратор", "Менеджер","Арбузик" };                                    // Здесь прописываются роли!
+        public static string[] roles = new string[] { "Администратор", "Менеджер" };                                    // Здесь прописываются роли!
 
         #region +++ Права, индивидуальные к каждой РОЛИ ПО УМОЛЧАНИЮ +++
         public static Dictionary<string, TablePermission> DefaultRolePermissions = new Dictionary<string, TablePermission>()
         {
             ["default"] = new TablePermission                                                                           // default - права для ВСЕХ
             {
-                CanRead = true,
+                CanRead = false,
                 CanWrite = false,
                 CanDelete = false,
                 CanExport = false,
@@ -59,8 +59,8 @@ namespace DPGTProject
             ["Менеджер"] = new TablePermission                                                                          // Менеджер - права для Менеджера
             {
                 CanRead = true,
-                CanWrite = false,
-                CanDelete = false,
+                CanWrite = true,
+                CanDelete = true,
                 CanExport = false,
                 CanImport = false
             }
@@ -74,16 +74,15 @@ namespace DPGTProject
             ["Администратор"] = new List<TablePermission>
             { /* ^РОЛЬ^, которой назначаются права ниже.*/
                 new TablePermission {
-                    TableName = "Users" , // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
-                    CanRead = true,       // <--- Может ли просматривать?
-                    CanWrite = true,      // <--- Может ли записывать/редактировать?
-                    CanDelete = true,     // <--- Может ли удалять?
-                    CanExport = true,     // <--- Может ли экспортировать?
-                    CanImport = true      // <--- Может ли импортировать?
+                    TableName = "Users", // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
+                    CanRead   =  true,    // <--- Может ли просматривать?
+                    CanWrite  =  true,    // <--- Может ли записывать/редактировать?
+                    CanDelete =  true,    // <--- Может ли удалять?
+                    CanExport =  true,    // <--- Может ли экспортировать?
+                    CanImport =  true     // <--- Может ли импортировать?
                 },
                 // Можно добавлять таблицы дальше, аналогично.
-            }, 
-            // Можно добавлять другие роли, аналогично.
+            },
         };
         #endregion +++ Права, индивидуальные ПО РОЛЯМ к каждой ТАБЛИЦЕ +++
 
@@ -91,7 +90,7 @@ namespace DPGTProject
 
         #region --- Таблицы и автоопределение таблиц ---
         public static string[] tables = new string[] { };                                                               // Пример заполнения: tables = new string[] { "Documents", "DocumentHistory", "Fines", "Owners", "Violations" }; (!) НЕОБХОДИМО ОТКЛЮЧИТЬ АВТООПРЕДЕЛЕНИЕ ДЛЯ КОРРЕКТНОЙ РАБОТЫ!
-        public static string[] removeFromTableWhenStart = new string[] { "Users" };                                     // Какие таблицы удалять, после запуска(из добавленных вручную или автоматически добавленных)
+        public static string[] removeFromTableWhenStart = new string[] { };  // (!) мб стало бесполезным из-за ролей    // Какие таблицы удалять, после запуска(из добавленных вручную или автоматически добавленных)
         public static bool tableAutodetect = true;                                                                      // Включить автоопределение таблиц из базы данных
         public static string[] removeFromTableWhenAutodetect = new string[] { };                                        // (!) Какие таблицы удалять, после автоматического определения (!) Не работает если отключён автодетект.
         #endregion --- Таблицы и автоопределение таблиц ---

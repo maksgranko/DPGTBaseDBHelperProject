@@ -11,6 +11,7 @@ namespace DPGTProject
         {
             InitializeComponent();
             this.roles_cb.Items.AddRange(SystemConfig.roles);
+            if(SystemConfig.addRolesWhenRegistering || !Test.Initialized) { roles_cb.Visible = false; roles_label.Visible = false; }
         }
 
         private void register_btn_Click(object sender, EventArgs e)
