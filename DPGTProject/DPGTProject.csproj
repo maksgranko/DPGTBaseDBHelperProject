@@ -90,6 +90,9 @@
   <ItemGroup>
     <Compile Include="Auth.cs" />
     <Compile Include="DesignConfig.cs" />
+    <Compile Include="Forms\BaseForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\DataImportForm.cs">
       <SubType>Form</SubType>
     </Compile>

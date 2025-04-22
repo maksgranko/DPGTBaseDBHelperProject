@@ -1,6 +1,7 @@
 ﻿using DPGTProject.Configs;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 
 namespace DPGTProject
 {
@@ -20,7 +21,7 @@ namespace DPGTProject
         #endregion +++ Глобальные функции +++
 
         #region +++  UniversalTableViewerForm функции +++
-        public static bool additionalButtonsInTables = false;                                                           // Добавить кнопки добавления и изменения
+        public static bool additionalButtonsInTables = true;                                                            // Добавить кнопки добавления и изменения
         public static bool exportRightInTables = false;                                                                 // Добавить прямой экспорт
         public static bool helpButtonInTables = true;                                                                   // Добавить кнопку помощи
         public static bool enableFilterInTables = false;                                                                // Включить фильтр
@@ -41,9 +42,9 @@ namespace DPGTProject
         #endregion --- Таблицы и автоопределение таблиц ---
 
         #region --- Цветовая тема и иконка ---
-        public static bool applyCustomThemes = false;                                                                   // Применять кастомные темы к окнам
-        public static DesignConfig.ApplicationTheme applicationTheme = DesignConfig.ApplicationTheme.SystemDefault;     // Указать цветовую палитру
-        public static Icon Icon = null;                                                                                 // Иконка для всех форм
+        public static bool applyCustomThemes = true;                                                                    // Применять кастомные темы к окнам
+        public static DesignConfig.ApplicationTheme applicationTheme = DesignConfig.ApplicationTheme.SystemDefault;     // Указать цветовую палитру, если отключено applyCustomThemes, тема не будет применена
+        public static Icon Icon = File.Exists("icon.ico") ? new Icon("icon.ico") : null;                                // Иконка для всех форм, если добавляете иконку "нагло", как с new Icon(прописано по умолчанию), в свойствах необходимо указать "Всегда копировать"
                                                                                                                         // Пример через ресурсы: 
                                                                                                                         // Icon = Properties.Resources.AppIcon;
                                                                                                                         // 

@@ -1,16 +1,14 @@
-﻿using DPGTProject.Configs;
+﻿using DPGTProject.Forms;
 using System;
 using System.Windows.Forms;
 
 namespace DPGTProject
 {
-    public partial class AuthForm : Form
+    public partial class AuthForm : BaseForm
     {
         public AuthForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
-            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
             if (Test.Initialized)
             {
                 login_tb.Text = "www";

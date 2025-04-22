@@ -1,4 +1,4 @@
-using DPGTProject.Configs;
+using DPGTProject.Forms;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
@@ -9,15 +9,13 @@ using System.Windows.Forms;
 
 namespace DPGTProject
 {
-    public partial class DataImportForm : Form
+    public partial class DataImportForm : BaseForm
     {
         private DataTable _importData;
 
         public DataImportForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
-            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
             if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
             this.tableComboBox.Items.AddRange(SystemConfig.tables.Select(t => SystemConfig.TranslateComboBox(t)).ToArray());
         }

@@ -1,4 +1,4 @@
-﻿using DPGTProject.Configs;
+﻿using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace DPGTProject
 {
-    public partial class MainForm : Form
+    public partial class MainForm : BaseForm
     {
         private string[] tables;
         private Dictionary<Type, Form> openForms = new Dictionary<Type, Form>();
@@ -31,8 +31,6 @@ namespace DPGTProject
         public MainForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
-            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
         }
 
         private void MainForm_Load(object sender, EventArgs e)

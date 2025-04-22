@@ -18,7 +18,7 @@ namespace DPGTProject
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.save_btn = new System.Windows.Forms.ToolStripButton();
-            this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
+            this.refresh_btn = new System.Windows.Forms.ToolStripButton();
             this.export_btn = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.addrow_btn = new System.Windows.Forms.ToolStripButton();
@@ -55,7 +55,7 @@ namespace DPGTProject
             // 
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.save_btn,
-            this.toolStripButton1,
+            this.refresh_btn,
             this.export_btn,
             this.toolStripSeparator3,
             this.addrow_btn,
@@ -85,11 +85,12 @@ namespace DPGTProject
             this.save_btn.Text = "Сохранить";
             this.save_btn.Click += new System.EventHandler(this.btnSave_Click);
             // 
-            // toolStripButton1
+            // refresh_btn
             // 
-            this.toolStripButton1.Name = "toolStripButton1";
-            this.toolStripButton1.Size = new System.Drawing.Size(65, 22);
-            this.toolStripButton1.Text = "Обновить";
+            this.refresh_btn.Name = "refresh_btn";
+            this.refresh_btn.Size = new System.Drawing.Size(65, 22);
+            this.refresh_btn.Text = "Обновить";
+            this.refresh_btn.Click += new System.EventHandler(this.btnRefresh_Click);
             // 
             // export_btn
             // 
@@ -141,6 +142,7 @@ namespace DPGTProject
             this.find_tb.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.find_tb.Name = "find_tb";
             this.find_tb.Size = new System.Drawing.Size(100, 25);
+            this.find_tb.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.find_tb_KeyPress);
             // 
             // find_next_btn
             // 
@@ -200,7 +202,7 @@ namespace DPGTProject
             this.exit_btn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.exit_btn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.exit_btn.Name = "exit_btn";
-            this.exit_btn.Size = new System.Drawing.Size(46, 19);
+            this.exit_btn.Size = new System.Drawing.Size(46, 22);
             this.exit_btn.Text = "Выход";
             this.exit_btn.TextImageRelation = System.Windows.Forms.TextImageRelation.Overlay;
             this.exit_btn.Click += new System.EventHandler(this.exit_btn_Click);
@@ -262,6 +264,6 @@ namespace DPGTProject
         private System.Windows.Forms.ToolStripButton exit_btn;
         private System.Windows.Forms.ToolStripButton addrow_btn;
         private System.Windows.Forms.ToolStripButton editrow_btn;
-        private System.Windows.Forms.ToolStripButton toolStripButton1;
+        private System.Windows.Forms.ToolStripButton refresh_btn;
     }
 }

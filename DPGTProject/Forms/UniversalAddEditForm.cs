@@ -1,4 +1,3 @@
-using DPGTProject.Configs;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -7,7 +6,7 @@ using System.Windows.Forms;
 
 namespace DPGTProject.Forms
 {
-    public partial class UniversalAddEditForm : Form
+    public partial class UniversalAddEditForm : BaseForm
     {
         public string GeneratedInsertQuery { get; private set; }
         public string GeneratedUpdateQuery { get; private set; }
@@ -60,15 +59,13 @@ namespace DPGTProject.Forms
             // 
             // UniversalAddEditForm
             // 
-            this.ClientSize = new System.Drawing.Size(284, 261);
+            this.ClientSize = new Size(284, 261);
             this.DoubleBuffered = true;
             this.Name = "UniversalAddEditForm";
             string translatedTableName = SystemConfig.TranslateComboBox(_tableName);
             this.Text = _isEditMode ? $"Редактирование: {translatedTableName}" : $"Добавление: {translatedTableName}";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.StartPosition = FormStartPosition.CenterScreen;
             this.DialogResult = DialogResult.Abort;
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
-            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
 
             try
             {
@@ -79,8 +76,8 @@ namespace DPGTProject.Forms
             {
                 MessageBox.Show(_isEditMode ?
                     "Данную строку невозможно отредактировать." :
-                    "Данную строку невозможно удалить.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                this.Close();
+                    "Здесь невозможно добавить строку.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (!this.IsDisposed) this.Close();
             }
 
             this.ResumeLayout(false);
@@ -158,7 +155,7 @@ namespace DPGTProject.Forms
                     DecimalPlaces = 0,
                     Width = 150
                 };
-            if (type == typeof(double))
+            if (type == typeof(double) || type == typeof(decimal) || type == typeof(float))
                 return new NumericUpDown
                 {
                     Minimum = decimal.MinValue,
@@ -176,7 +173,8 @@ namespace DPGTProject.Forms
                 return new CheckBox { Width = 150 };
 #pragma warning restore CS0252
 
-            throw new ArgumentException($"Неподдерживаемый тип для {columnName}");
+            SystemConfig.lastError = $"Неподдерживаемый тип для {columnName}";
+            throw new ArgumentException(SystemConfig.lastError);
         }
 
         private void SetControlValue(Control control, object value)

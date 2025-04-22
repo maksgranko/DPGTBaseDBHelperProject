@@ -1,4 +1,3 @@
-using DPGTProject.Configs;
 using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
@@ -8,7 +7,7 @@ using System.Windows.Forms;
 
 namespace DPGTProject
 {
-    public partial class UniversalTableViewerForm : Form
+    public partial class UniversalTableViewerForm : BaseForm
     {
         private string _tableName;
         private string _currentFilter = string.Empty;
@@ -31,8 +30,6 @@ namespace DPGTProject
         public UniversalTableViewerForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
-            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
             dataGridView1.DataError += DataGridView1_DataError;
             if (!SystemConfig.exportRightInTables) { export_btn.Visible = false; }
             if (!SystemConfig.helpButtonInTables) { help_btn.Visible = false; toolStripSeparator2.Visible = false; }
@@ -116,7 +113,7 @@ namespace DPGTProject
         private void removerow_btn_Click(object sender, EventArgs e)
         {
             if (dataGridView1.SelectedRows.Count == 0) { MessageBox.Show("Выберите одну или более строк!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
-            if (MessageBox.Show("Вы точно желаете удалить запись(и)?", "Внимание!", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.No) { return; }
+            if (MessageBox.Show("Вы точно желаете удалить запись(и)?", "Внимание!", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.No) return;
             try
             {
                 for (int i = dataGridView1.SelectedRows.Count - 1; i >= 0; i--)
@@ -140,8 +137,8 @@ namespace DPGTProject
             string text = "Вы можете использовать кнопки на верхней панели.\nДополнительные подсказки:\n";
             if (SystemConfig.enableFilterInTables) helpList.Add("Для фильтрации данных используйте кнопку \"Фильтр\".");
             if (SystemConfig.exportRightInTables) helpList.Add("Для экспорта нажмите \"Экспорт\".");
-            helpList.Add("Редактируйте напрямую в полях.");
-            helpList.Add("Для удаления выделите строки и нажмите \"Удалить\".");
+            if (!SystemConfig.additionalButtonsInTables) helpList.Add("Редактируйте напрямую в полях.");
+            helpList.Add("Для удаления выделите строки и нажмите \"Удалить строку\".");
             if (SystemConfig.enableSearchInTables) helpList.Add("Для поиска введите текст в поле \"Найти\" и используйте кнопки ↑↓.");
             if (SystemConfig.moreExitButtons) helpList.Add("Для того, чтобы закрыть форму, вы также можете использовать кнопку \"Выход\".");
             for (int i = 0; i < helpList.Count; i++)
@@ -151,23 +148,20 @@ namespace DPGTProject
             MessageBox.Show(text, "Справка", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private void FindNext_Click(object sender, EventArgs e)
+        private void HandleSearch(bool isNext)
         {
             SearchAllColumns();
             if (_searchResults.Count == 0) return;
 
-            _currentSearchIndex = (_currentSearchIndex + 1) % _searchResults.Count;
+            _currentSearchIndex = isNext
+                ? (_currentSearchIndex + 1) % _searchResults.Count
+                : (_currentSearchIndex - 1 + _searchResults.Count) % _searchResults.Count;
+
             NavigateToResult();
         }
 
-        private void FindPrevious_Click(object sender, EventArgs e)
-        {
-            SearchAllColumns();
-            if (_searchResults.Count == 0) return;
-
-            _currentSearchIndex = (_currentSearchIndex - 1 + _searchResults.Count) % _searchResults.Count;
-            NavigateToResult();
-        }
+        private void FindNext_Click(object sender, EventArgs e) => HandleSearch(true);
+        private void FindPrevious_Click(object sender, EventArgs e) => HandleSearch(false);
 
         private void SearchAllColumns()
         {
@@ -297,6 +291,7 @@ namespace DPGTProject
             var form = new UniversalAddEditForm(columnDefinitions, TableName);
             try
             {
+                if (form.IsDisposed) throw new Exception("Произошла критическая ошибка формы AddEdit.");
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     if (form.GeneratedInsertQuery == null) throw new NullReferenceException("Ошибка формы. Вероятно, введены некорректные значения.");
@@ -437,6 +432,14 @@ namespace DPGTProject
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void find_tb_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == '\r')
+            {
+                FindNext_Click(null, null);
             }
         }
     }

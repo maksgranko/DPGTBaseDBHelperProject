@@ -1,16 +1,15 @@
 ﻿using DPGTProject.Configs;
+using DPGTProject.Forms;
 using System;
 using System.Windows.Forms;
 
 namespace DPGTProject
 {
-    public partial class RegisterForm : Form
+    public partial class RegisterForm : BaseForm
     {
         public RegisterForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
-            if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
             this.roles_cb.Items.AddRange(SystemConfig.roles);
         }
 

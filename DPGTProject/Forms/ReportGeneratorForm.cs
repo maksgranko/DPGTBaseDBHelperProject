@@ -1,4 +1,5 @@
 using DPGTProject.Configs;
+using DPGTProject.Forms;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using OfficeOpenXml;
@@ -10,7 +11,7 @@ using System.Windows.Forms;
 
 namespace DPGTProject
 {
-    public partial class ReportGeneratorForm : Form
+    public partial class ReportGeneratorForm : BaseForm
     {
         public DataTable _translatedData;
 
@@ -21,8 +22,6 @@ namespace DPGTProject
         public ReportGeneratorForm()
         {
             InitializeComponent();
-            DesignConfig.ApplyTheme(SystemConfig.applicationTheme, this);
-            if (!SystemConfig.moreExitButtons) exit_btn.Visible = false;
             ReportTypeChanged(null, null);
             if (!Test.Initialized || UserConfig.userRole != "Администратор") radioButtonExportTables.Visible = false;
             if (SystemConfig.Icon != null) this.Icon = SystemConfig.Icon;
