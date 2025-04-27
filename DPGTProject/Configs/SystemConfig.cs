@@ -16,17 +16,17 @@ namespace DPGTProject
         #region --- Дополнительные функции ---
 
         #region +++ Глобальные функции +++
-        public static bool openEveryWindowInNew = true;                              // Открывать новые окна в каждом новом
-        public static bool moreExitButtons = false;                                  // БОЛЬШЕ КНОПОЧЕК "ВЫХОД" !!!
-        #endregion +++ Глобальные функции +++
+        public static bool openEveryWindowInNew = true;                                                                 // Открывать новые окна в каждом новом
+        public static bool moreExitButtons = false;                                                                     // БОЛЬШЕ КНОПОЧЕК "ВЫХОД" !!!
+        #endregion +++ Глобальные функции +++                                   
 
-        #region +++  UniversalTableViewerForm функции +++
-        public static bool additionalButtonsInTables = true;                         // Добавить кнопки добавления и изменения
-        public static bool exportRightInTables = false;                              // Добавить прямой экспорт
-        public static bool helpButtonInTables = true;                                // Добавить кнопку помощи
-        public static bool enableFilterInTables = false;                             // Включить фильтр
-        public static bool enableSearchInTables = true;                              // Включить поиск
-        #endregion +++ UniversalTableViewerForm функции +++
+        #region +++  UniversalTableViewerForm функции +++                                   
+        public static bool additionalButtonsInTables = true;                                                            // Добавить кнопки добавления и изменения
+        public static bool exportRightInTables = false;                                                                 // Добавить прямой экспорт
+        public static bool helpButtonInTables = true;                                                                   // Добавить кнопку помощи
+        public static bool enableFilterInTables = false;                                                                // Включить фильтр
+        public static bool enableSearchInTables = true;                                                                 // Включить поиск
+        #endregion +++ UniversalTableViewerForm функции +++                                 
 
         #region +++  RegisterForm функции +++
         public static bool addRolesWhenRegistering = false;                                                            // Добавить выбор роли при регистрации
@@ -35,12 +35,12 @@ namespace DPGTProject
         #endregion --- Дополнительные функции ---
 
         #region --- Роли, необходимые для программы ---
-        public static string[] roles = new string[] { "Администратор", "Менеджер" };                                    // Здесь прописываются роли!
+        public static string[] roles = new string[] { "Администратор", "Менеджер" };                                   // Здесь прописываются роли!
 
         #region +++ Права, индивидуальные к каждой РОЛИ ПО УМОЛЧАНИЮ +++
         public static Dictionary<string, TablePermission> DefaultRolePermissions = new Dictionary<string, TablePermission>()
         {
-            ["default"] = new TablePermission                                                                           // default - права для ВСЕХ
+            ["default"] = new TablePermission                                                                          // default - права для ВСЕХ
             {
                 CanRead = false,
                 CanWrite = false,
@@ -48,7 +48,7 @@ namespace DPGTProject
                 CanExport = false,
                 CanImport = false
             },
-            ["Администратор"] = new TablePermission                                                                     // Администратор - права для Администратора
+            ["Администратор"] = new TablePermission                                                                    // Администратор - права для Администратора
             {
                 CanRead = true,
                 CanWrite = true,
@@ -56,7 +56,7 @@ namespace DPGTProject
                 CanExport = true,
                 CanImport = true
             },
-            ["Менеджер"] = new TablePermission                                                                          // Менеджер - права для Менеджера
+            ["Менеджер"] = new TablePermission                                                                         // Менеджер - права для Менеджера
             {
                 CanRead = true,
                 CanWrite = true,
@@ -72,16 +72,16 @@ namespace DPGTProject
         public static Dictionary<string, List<TablePermission>> RolePermissions = new Dictionary<string, List<TablePermission>>()
         {
             ["Администратор"] = new List<TablePermission>
-            { /* ^РОЛЬ^, которой назначаются права ниже.*/
+            {                                                                                                       /* ^РОЛЬ^, которой назначаются права ниже.*/
                 new TablePermission {
-                    TableName = "Users", // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
-                    CanRead   =  true,    // <--- Может ли просматривать?
-                    CanWrite  =  true,    // <--- Может ли записывать/редактировать?
-                    CanDelete =  true,    // <--- Может ли удалять?
-                    CanExport =  true,    // <--- Может ли экспортировать?
-                    CanImport =  true     // <--- Может ли импортировать?
+                    TableName = "Users",                                                                            // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
+                    CanRead   =  true,                                                                              // <--- Может ли просматривать?
+                    CanWrite  =  true,                                                                              // <--- Может ли записывать/редактировать?
+                    CanDelete =  true,                                                                              // <--- Может ли удалять?
+                    CanExport =  true,                                                                              // <--- Может ли экспортировать?
+                    CanImport =  true                                                                               // <--- Может ли импортировать?
                 },
-                // Можно добавлять таблицы дальше, аналогично.
+                                                                                                                    // Можно добавлять таблицы дальше, аналогично.
             },
         };
         #endregion +++ Права, индивидуальные ПО РОЛЯМ к каждой ТАБЛИЦЕ +++
