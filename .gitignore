@@ -15,7 +15,6 @@
 
 # Mono auto generated files
 mono_crash.*
-
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -308,7 +307,8 @@ paket-files/
 
 # FAKE - F# Make
 .fake/
-
+.vscode
+.vscode/
 # CodeRush personal settings
 .cr/personal
 
