@@ -23,7 +23,7 @@ namespace DPGTProject
         #region +++  UniversalTableViewerForm функции +++                                   
         public static bool additionalButtonsInTables = true;                                                            // Добавить кнопки добавления и изменения
         public static bool exportRightInTables = false;                                                                 // Добавить прямой экспорт
-        public static bool helpButtonInTables = true;                                                                   // Добавить кнопку помощи
+        public static bool helpButtonInTables = true;                                                                   // Добавить кнопку справки
         public static bool enableFilterInTables = false;                                                                // Включить фильтр
         public static bool enableSearchInTables = true;                                                                 // Включить поиск
         #endregion +++ UniversalTableViewerForm функции +++                                 
