@@ -11,12 +11,19 @@ namespace DPGTProject
     {
         public static class Users
         {
+            public static string UsersTableName = "Users";                                                                     // Если вам необходимо изменить таблицу "Users", измените здесь
+            public static Dictionary<string, string> UsersTableColumnsNames = new Dictionary<string, string> {                 // Если вам необходимо изменить названия колонок в таблице "Users", измените здесь
+                { "UserID","UserID"},                                                                                          // Менять необходимо ВТОРОЕ значение, именно оно влияет на название таблицы, а первое используется в коде.
+                { "Login","Login"},
+                { "Password","Password"},
+                { "Role","Role"},
+            };
             public static DataTable GetAll()
             {
                 DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
                 {
-                    SqlDataAdapter da = new SqlDataAdapter("SELECT * FROM Users", conn);
+                    SqlDataAdapter da = new SqlDataAdapter($"SELECT * FROM {UsersTableName}", conn);
                     da.Fill(dt);
                 }
                 return dt;
@@ -26,7 +33,7 @@ namespace DPGTProject
                 DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
                 {
-                    string query = "SELECT * FROM Users WHERE UserID = @UserID";
+                    string query = $"SELECT * FROM {UsersTableName} WHERE {UsersTableColumnsNames["UserID"]} = @UserID";
                     SqlDataAdapter da = new SqlDataAdapter(query, conn);
                     da.SelectCommand.Parameters.AddWithValue("@UserID", userId);
                     da.Fill(dt);
@@ -38,7 +45,7 @@ namespace DPGTProject
                 DataTable dt = new DataTable();
                 using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
                 {
-                    string query = "SELECT * FROM Users WHERE Login = @Login";
+                    string query = $"SELECT * FROM {UsersTableName} WHERE {UsersTableColumnsNames["Login"]} = @Login";
                     SqlDataAdapter da = new SqlDataAdapter(query, conn);
                     da.SelectCommand.Parameters.AddWithValue("@Login", login);
                     da.Fill(dt);
@@ -48,13 +55,18 @@ namespace DPGTProject
             public static string GetUserStatus(string login)
             {
                 var user = GetByLogin(login);
-                return user?["Role"]?.ToString();
+                return user?[UsersTableColumnsNames["Role"]]?.ToString();
             }
             public static bool Create(string login, string password, string role)
             {
                 using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
                 {
-                    string query = "INSERT INTO Users (Login, Password, Role) VALUES (@Login, @Password, @Role)";
+                    string query = $"INSERT INTO {UsersTableName} " +
+                                   $"({UsersTableColumnsNames["Login"]}, " +
+                                   $"{UsersTableColumnsNames["Password"]}, " +
+                                   $"{UsersTableColumnsNames["Role"]}) " +
+                                   $"VALUES (@Login, @Password, @Role)";
+
                     SqlCommand cmd = new SqlCommand(query, conn);
                     cmd.Parameters.AddWithValue("@Login", login);
                     cmd.Parameters.AddWithValue("@Password", password);
@@ -68,7 +80,11 @@ namespace DPGTProject
             {
                 using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
                 {
-                    string query = "UPDATE Users SET Login = @Login, Password = @Password, Role = @Role WHERE UserID = @UserID";
+                    string query = $"UPDATE {UsersTableName} SET " +
+                                   $"{UsersTableColumnsNames["Login"]} = @Login, " +
+                                   $"{UsersTableColumnsNames["Password"]} = @Password, " +
+                                   $"{UsersTableColumnsNames["Role"]} = @Role " +
+                                   $"WHERE {UsersTableColumnsNames["UserID"]} = @UserID";
                     SqlCommand cmd = new SqlCommand(query, conn);
                     cmd.Parameters.AddWithValue("@UserID", userId);
                     cmd.Parameters.AddWithValue("@Login", login);
@@ -83,7 +99,7 @@ namespace DPGTProject
             {
                 using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
                 {
-                    string query = "DELETE FROM Users WHERE UserID = @UserID";
+                    string query = $"DELETE FROM {UsersTableName} WHERE {UsersTableColumnsNames["UserID"]} = @UserID";
                     SqlCommand cmd = new SqlCommand(query, conn);
                     cmd.Parameters.AddWithValue("@UserID", userId);
 
@@ -458,14 +474,14 @@ namespace DPGTProject
             {
                 conn.Open();
                 var cmd = new SqlCommand(
-                    "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Users') " +
+                    $"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{Users.UsersTableName}') " +
                     "BEGIN " +
-                    "CREATE TABLE Users (" +
-                    "UserID int IDENTITY(1,1) PRIMARY KEY, " +
-                    "Login nvarchar(64) NOT NULL, " +
-                    "Password nvarchar(64) NOT NULL, " +
-                    "Role nvarchar(32) NOT NULL); " +
-                    "CREATE INDEX IX_Users_Login ON Users(Login); " +
+                    $"CREATE TABLE {Users.UsersTableName} (" +
+                    $"{Users.UsersTableColumnsNames["UserID"]} int IDENTITY(1,1) PRIMARY KEY, " +
+                    $"{Users.UsersTableColumnsNames["Login"]} nvarchar(64) NOT NULL, " +
+                    $"{Users.UsersTableColumnsNames["Password"]} nvarchar(64) NOT NULL, " +
+                    $"{Users.UsersTableColumnsNames["Role"]} nvarchar(32) NOT NULL); " +
+                    $"CREATE INDEX IX_Users_Login ON {Users.UsersTableName}({Users.UsersTableColumnsNames["Login"]}); " +
                     "END", conn);
                 cmd.ExecuteNonQuery();
             }

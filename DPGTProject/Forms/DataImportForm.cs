@@ -1,3 +1,4 @@
+using DPGTProject.Configs;
 using DPGTProject.Forms;
 using OfficeOpenXml;
 using System;
@@ -17,7 +18,15 @@ namespace DPGTProject
         {
             InitializeComponent();
             if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
-            this.tableComboBox.Items.AddRange(SystemConfig.tables.Select(t => SystemConfig.TranslateComboBox(t)).ToArray());
+            var filteredTables = SystemConfig.tables
+                .Where(t =>
+                {
+                    bool hasAccess = RoleManager.CheckAccess(UserConfig.userRole, t, "import") && RoleManager.CheckAccess(UserConfig.userRole, t, "write");
+                    return hasAccess;
+                })
+                .Select(t => SystemConfig.TranslateComboBox(t))
+                .ToArray();
+            this.tableComboBox.Items.AddRange(filteredTables);
         }
 
         private void SelectFile(object sender, EventArgs e)
@@ -31,7 +40,7 @@ namespace DPGTProject
                 {
                     if (openDialog.FilterIndex == 1) // Excel
                     {
-                        ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+                        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
                         using (var excel = new ExcelPackage(new FileInfo(openDialog.FileName)))
                         {
                             var worksheet = excel.Workbook.Worksheets.First();

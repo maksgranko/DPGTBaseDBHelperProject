@@ -1,4 +1,5 @@
 using DPGTProject.Forms;
+using DPGTProject.Configs;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using OfficeOpenXml;
@@ -29,7 +30,13 @@ namespace DPGTProject
         {
             reportTypeComboBox.Items.Clear();
 
-            if (radioButtonExportTables.Checked)
+            if (radioButtonExportTables.Checked && UserConfig.userRole != "Администратор")
+            {
+                MessageBox.Show("Экспорт всех таблиц доступен только администраторам",
+                    "Ошибка прав", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            else if (radioButtonExportTables.Checked)
             {
                 generate_btn.Enabled = false;
                 reportTypeComboBox.Enabled = false;
@@ -43,13 +50,19 @@ namespace DPGTProject
             {
                 reportTypeComboBox.Items.AddRange(new object[] {
                     "Отчёт 1",
-                    "Отчёт 2"});
+                    "Отчёт 2"}); // Здесь вы добавляете отчёты(репорты), а ниже инициализируете и программируете
             }
             else
             {
-                reportTypeComboBox.Items.AddRange(SystemConfig.tables
+                var filteredTables = SystemConfig.tables
+                    .Where(t =>
+                    {
+                        bool hasAccess = RoleManager.CheckAccess(UserConfig.userRole, t, "read") && RoleManager.CheckAccess(UserConfig.userRole, t, "export");
+                        return hasAccess;
+                    })
                     .Select(t => SystemConfig.TranslateComboBox(t))
-                    .ToArray());
+                    .ToArray();
+                reportTypeComboBox.Items.AddRange(filteredTables);
             }
         }
         public void GenerateReport(object sender, EventArgs e)

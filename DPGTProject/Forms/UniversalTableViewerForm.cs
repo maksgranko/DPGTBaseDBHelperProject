@@ -38,7 +38,8 @@ namespace DPGTProject
         {
             string role = UserConfig.userRole;
             string table = _tableName ?? "";
-
+            bool write = RoleManager.CheckAccess(role, table, "write"); // cache for optimization
+            // возможно позже это реализую в UserConfig)
             export_btn.Visible = SystemConfig.exportRightInTables && RoleManager.CheckAccess(role, table, "export");
             help_btn.Visible = SystemConfig.helpButtonInTables;
             toolStripSeparator2.Visible = help_btn.Visible || export_btn.Visible;
@@ -56,10 +57,10 @@ namespace DPGTProject
             exit_btn.Visible = SystemConfig.moreExitButtons;
             toolStripSeparator5.Visible = exit_btn.Visible;
 
-            addrow_btn.Visible = SystemConfig.additionalButtonsInTables && RoleManager.CheckAccess(role, table, "write");
-            editrow_btn.Visible = SystemConfig.additionalButtonsInTables && RoleManager.CheckAccess(role, table, "write");
-            save_btn.Visible = RoleManager.CheckAccess(role, table, "write");
-            removerow_btn.Visible = RoleManager.CheckAccess(role, table, "write") && RoleManager.CheckAccess(role, table, "delete");
+            addrow_btn.Visible = SystemConfig.additionalButtonsInTables && write;
+            editrow_btn.Visible = SystemConfig.additionalButtonsInTables && write;
+            save_btn.Visible = write;
+            removerow_btn.Visible = write && RoleManager.CheckAccess(role, table, "delete");
         }
 
         private void DataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)

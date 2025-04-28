@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
+using static DPGTProject.Database;
 
 namespace DPGTProject
 {
@@ -22,7 +23,7 @@ namespace DPGTProject
             var user = Database.Users.GetByLogin(login);
             if (user == null) return false;
 
-            string storedHash = user["Password"].ToString();
+            string storedHash = user[Users.UsersTableColumnsNames["Password"]].ToString();
             string inputHash = SimpleHash(password);
 
             return storedHash == inputHash;
