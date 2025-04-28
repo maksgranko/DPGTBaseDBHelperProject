@@ -410,6 +410,7 @@ public static string connectionString = Database.ConnectionStringBuilder(databas
 
 **Q: Как изменить строку подключения к БД?**  
 A: Настройки в `Database.cs` → `ConnectionStringBuilder`. Поддерживает SQL Server и совместимое.
+Учтите! Если вы собираетесь вводить вручную, установите auto = false, вместо true
 
 **Q: Как добавить новую роль?**
 
