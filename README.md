@@ -212,7 +212,7 @@ SystemConfig - это как пульт управления для вашего
 public static string databaseName = "MyDatabase"; // Здесь пишем имя нашей базы
 ```
 
-- `connectionString`: Строка подключения к базе данных. Обычно формируется автоматически на основе `databaseName` в классе `Database.cs` (метод `ConnectionStringBuilder`). Если нужно изменить строку подключения, это можно сделать здесь или непосредственно в `Database.cs`.
+- `connectionString`: Строка подключения к базе данных. Обычно формируется автоматически на основе `databaseName` в классе `Database.cs` (метод `ConnectionStringBuilder`). Если нужно изменить строку подключения, это необходимо менять непосредственно в самом методе, в `Database.cs`.
 
 ```csharp
 public static string connectionString = Database.ConnectionStringBuilder(databaseName);
