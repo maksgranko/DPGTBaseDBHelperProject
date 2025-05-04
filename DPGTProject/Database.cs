@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Sql;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Windows.Forms;
@@ -108,14 +109,70 @@ namespace DPGTProject
                 }
             }
         }
-        public static string ConnectionStringBuilder(string databaseName)
+        public static string ConnectionStringBuilder(string databaseName, bool auto = true)
         {
+            if (auto) // флаг автоматического определения строки подключения
+            {
+                string result = null;
+                result = Database.ParseFirstSQLServer(databaseName);
+                if (result != null) return result;
+            }
             return $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
             //Иногда работают следующие варианты:
             //return $"Data Source={Environment.MachineName}\\SQLEXPRESS;Initial Catalog={databaseName};Integrated Security=True;Encrypt=False;TrustServerCertificate=True";
             //return $"Data Source={Environment.MachineName}\\SQLEXPRESS;Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
             // Значение по умолчанию:
             //return $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
+        }
+
+        public static string ParseFirstSQLServer(string databaseName)
+        {
+            string[] defaultServers = {
+                "localhost",
+                ".",
+                ".\\SQLEXPRESS",
+                Environment.MachineName,
+                $"{Environment.MachineName}\\SQLEXPRESS"
+            };
+
+            foreach (var server in defaultServers)
+            {
+                try
+                {
+                    using (var conn = new SqlConnection($"Data Source={server};Initial Catalog=master;Integrated Security=True;Connection Timeout=3;"))
+                    {
+                        conn.Open();
+                        return $"Data Source={server};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
+                    }
+                }
+                catch { }
+            }
+
+            try
+            {
+                var instances = SqlDataSourceEnumerator.Instance.GetDataSources();
+                foreach (DataRow row in instances.Rows)
+                {
+                    string serverName = row["ServerName"].ToString();
+                    string instanceName = row["InstanceName"].ToString();
+                    string fullServerName = string.IsNullOrEmpty(instanceName)
+                        ? serverName
+                        : $"{serverName}\\{instanceName}";
+
+                    try
+                    {
+                        using (var conn = new SqlConnection($"Data Source={fullServerName};Initial Catalog=master;Integrated Security=True;Connection Timeout=3;"))
+                        {
+                            conn.Open();
+                            return $"Data Source={fullServerName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
+            return null;
         }
         public static DataTable Translate(DataTable dt, string tableName)
         {

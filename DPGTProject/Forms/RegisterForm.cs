@@ -11,7 +11,8 @@ namespace DPGTProject
         {
             InitializeComponent();
             this.roles_cb.Items.AddRange(SystemConfig.roles);
-            if(SystemConfig.addRolesWhenRegistering || !Test.Initialized) { roles_cb.Visible = false; roles_label.Visible = false; }
+            if(!SystemConfig.addRolesWhenRegistering) { roles_cb.Visible = false; roles_label.Visible = false; }
+            roles_cb.SelectedIndex = roles_cb.Items.Count-1; // выбор самой мелкой(последней) роли по умолчанию 
         }
 
         private void register_btn_Click(object sender, EventArgs e)

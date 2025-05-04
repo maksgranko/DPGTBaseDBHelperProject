@@ -23,7 +23,7 @@ namespace DPGTProject
         #region +++  UniversalTableViewerForm функции +++                                   
         public static bool additionalButtonsInTables = true;                                                            // Добавить кнопки добавления и изменения
         public static bool exportRightInTables = false;                                                                 // Добавить прямой экспорт
-        public static bool helpButtonInTables = true;                                                                   // Добавить кнопку помощи
+        public static bool helpButtonInTables = true;                                                                   // Добавить кнопку справки
         public static bool enableFilterInTables = false;                                                                // Включить фильтр
         public static bool enableSearchInTables = true;                                                                 // Включить поиск
         #endregion +++ UniversalTableViewerForm функции +++                                 
@@ -72,15 +72,15 @@ namespace DPGTProject
         public static Dictionary<string, List<TablePermission>> RolePermissions = new Dictionary<string, List<TablePermission>>()
         {
             ["Администратор"] = new List<TablePermission>
-            {                                                                                                       /* ^РОЛЬ^, которой назначаются права ниже.*/
+            {                                                                                                           /* ^РОЛЬ^, которой назначаются права ниже.*/
                 new TablePermission {
-                    TableName = "Users",                                                                            // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
-                    CanRead   =  true,                                                                              // <--- Может ли просматривать?
-                    CanWrite  =  true,                                                                              // <--- Может ли записывать/редактировать?
-                    CanDelete =  true,                                                                              // <--- Может ли удалять?
-                    CanExport =  true,                                                                              // <--- Может ли экспортировать?
-                    CanImport =  true                                                                               // <--- Может ли импортировать?
-                },                                                                                                  // Можно добавлять таблицы дальше, аналогично.
+                    TableName = Database.Users.UsersTableName,                                                          // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
+                    CanRead   =  true,                                                                                  // <--- Может ли просматривать?
+                    CanWrite  =  true,                                                                                  // <--- Может ли записывать/редактировать?
+                    CanDelete =  true,                                                                                  // <--- Может ли удалять?
+                    CanExport =  true,                                                                                  // <--- Может ли экспортировать?
+                    CanImport =  true                                                                                   // <--- Может ли импортировать?
+                },                                                                                                      // Можно добавлять таблицы дальше, аналогично.
             },
         };
         #endregion +++ Права, индивидуальные ПО РОЛЯМ к каждой ТАБЛИЦЕ +++
