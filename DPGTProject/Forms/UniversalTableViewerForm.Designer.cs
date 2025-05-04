@@ -48,7 +48,7 @@ namespace DPGTProject
             this.dataGridView1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dataGridView1.Location = new System.Drawing.Point(0, 25);
             this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(1004, 458);
+            this.dataGridView1.Size = new System.Drawing.Size(987, 473);
             this.dataGridView1.TabIndex = 0;
             // 
             // toolStrip1
@@ -75,7 +75,7 @@ namespace DPGTProject
             this.exit_btn});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(1004, 25);
+            this.toolStrip1.Size = new System.Drawing.Size(987, 25);
             this.toolStrip1.TabIndex = 1;
             // 
             // save_btn
@@ -211,9 +211,9 @@ namespace DPGTProject
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.statusLabel});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 483);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 498);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(1004, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(987, 22);
             this.statusStrip1.SizingGrip = false;
             this.statusStrip1.TabIndex = 2;
             // 
@@ -225,7 +225,7 @@ namespace DPGTProject
             // 
             // UniversalTableViewerForm
             // 
-            this.ClientSize = new System.Drawing.Size(1004, 505);
+            this.ClientSize = new System.Drawing.Size(987, 520);
             this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.statusStrip1);

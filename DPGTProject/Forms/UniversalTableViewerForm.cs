@@ -38,8 +38,7 @@ namespace DPGTProject
         {
             string role = UserConfig.userRole;
             string table = _tableName ?? "";
-            bool write = RoleManager.CheckAccess(role, table, "write"); // cache for optimization
-            // возможно позже это реализую в UserConfig)
+            bool write = RoleManager.CheckAccess(role, table, "write");
             export_btn.Visible = SystemConfig.exportRightInTables && RoleManager.CheckAccess(role, table, "export");
             help_btn.Visible = SystemConfig.helpButtonInTables;
             toolStripSeparator2.Visible = help_btn.Visible || export_btn.Visible;
@@ -52,10 +51,10 @@ namespace DPGTProject
             find_next_btn.Visible = SystemConfig.enableSearchInTables;
             find_previous_btn.Visible = SystemConfig.enableSearchInTables;
             find_tb.Visible = SystemConfig.enableSearchInTables;
-            toolStripSeparator1.Visible = find_label.Visible;
+            toolStripSeparator1.Visible = SystemConfig.enableSearchInTables;
 
             exit_btn.Visible = SystemConfig.moreExitButtons;
-            toolStripSeparator5.Visible = exit_btn.Visible;
+            toolStripSeparator5.Visible = SystemConfig.moreExitButtons;
 
             addrow_btn.Visible = SystemConfig.additionalButtonsInTables && write;
             editrow_btn.Visible = SystemConfig.additionalButtonsInTables && write;
