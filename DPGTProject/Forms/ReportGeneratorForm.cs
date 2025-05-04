@@ -1,5 +1,5 @@
-using DPGTProject.Forms;
 using DPGTProject.Configs;
+using DPGTProject.Forms;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 using OfficeOpenXml;
@@ -14,6 +14,8 @@ namespace DPGTProject
     public partial class ReportGeneratorForm : BaseForm
     {
         public DataTable _translatedData;
+        public string start_date = null;
+        public string end_date = null;
 
         public ReportGeneratorForm(string[] ReportsNames) : this()
         {
@@ -26,34 +28,44 @@ namespace DPGTProject
             if (!Test.Initialized || UserConfig.userRole != "Администратор") radioButtonExportTables.Visible = false;
         }
 
+        private void DataTimePickerEnable(bool enable) {
+            to_lb.Visible = enable;
+            from_lb.Visible = enable;
+            start_dtp.Visible = enable;
+            end_dtp.Visible = enable;
+        }
+
         private void ReportTypeChanged(object sender, EventArgs e)
         {
+            start_date = null;
+            end_date = null;
             reportTypeComboBox.Items.Clear();
 
+            generate_btn.Enabled = true;
+            reportTypeComboBox.Enabled = true;
             if (radioButtonExportTables.Checked && UserConfig.userRole != "Администратор")
             {
+                DataTimePickerEnable(false);
                 MessageBox.Show("Экспорт всех таблиц доступен только администраторам",
                     "Ошибка прав", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             else if (radioButtonExportTables.Checked)
             {
+                DataTimePickerEnable(false);
                 generate_btn.Enabled = false;
                 reportTypeComboBox.Enabled = false;
             }
-            else
+            else if (radioPredefinedReport.Checked)
             {
-                generate_btn.Enabled = true;
-                reportTypeComboBox.Enabled = true;
-            }
-            if (radioPredefinedReport.Checked)
-            {
+                DataTimePickerEnable(true);
                 reportTypeComboBox.Items.AddRange(new object[] {
                     "Отчёт 1",
                     "Отчёт 2"}); // Здесь вы добавляете отчёты(репорты), а ниже инициализируете и программируете
             }
             else
             {
+                DataTimePickerEnable(false);
                 var filteredTables = SystemConfig.tables
                     .Where(t =>
                     {
@@ -67,6 +79,8 @@ namespace DPGTProject
         }
         public void GenerateReport(object sender, EventArgs e)
         {
+            start_date = start_dtp.Value.ToShortDateString();
+            end_date = end_dtp.Value.ToShortDateString();
             try
             {
                 DataTable reportData = null;
@@ -93,9 +107,10 @@ namespace DPGTProject
                         // Здесь алгоритм репортов.
                         case "Отчёт 1":
                             reportData = Database.GetDataTableFromSQL("Здесь_Вы_Задаёте_SQL-запрос, ну это к примеру"); // Получение данных
+                            // Примечание: Для дат с-по в SQL используйте переменные dtp(DateTimePicker, intellisense подскажет при написании)
                             reportData = Database.Translate(reportData, "Пример 1");                                    // Как переводить колоны у таблиц
                             throw new NotImplementedException("Задайте корректный алгоритм репорта!");                  // Стереть, после того, как функция будет реализована корректно
-                            break;
+                            break;                                                                                      // Ниже можно указать выполнение кода, при выборе любого из отчётов, работает также по названию.
                         case "Отчёт 2":
                             // ...
                             throw new NotImplementedException("Задайте корректный алгоритм репорта!");
@@ -118,6 +133,20 @@ namespace DPGTProject
             {
                 MessageBox.Show($"Не удалось сформировать отчёт. Обратитесь к администратору. \n Стек ошибки: {ex.Message}",
                     "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private void reportTypeComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (reportTypeComboBox.SelectedItem?.ToString())
+            {
+                // Здесь можно добавить код, который работает при выборе любого из значений.
+                case "Отчёт 1":
+                    break;
+                case "Отчёт 2":
+                    break;
+                default:
+                    //DataTimePickerEnable(false); // Уберёт DateTimePickе'ры при выборе любого
+                    return;
             }
         }
 
@@ -228,16 +257,22 @@ namespace DPGTProject
                                 };
                                 document.Add(reportName);
 
-                                // Добавляем пустую строку перед датой
                                 document.Add(new Paragraph(" "));
 
-                                // Добавляем дату отчёта
-                                var reportDate = new Paragraph(DateTime.Now.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("ru-RU")),
-                                    new iTextSharp.text.Font(baseFont, 10))
+                                var reportDate = new Paragraph("Дата создания отчёта: " + DateTime.Now.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("ru-RU")),
+                                    new Font(baseFont, 10))
                                 {
                                     Alignment = Element.ALIGN_LEFT
                                 };
                                 document.Add(reportDate);
+                                if (start_date != null || end_date != null)
+                                {
+                                    reportDate = new Paragraph($"Отчёт {(!(start_date is null) ? "с " + start_date : null)} {(!(end_date is null) ? "по " + end_date : null)}", new Font(baseFont, 10))
+                                    {
+                                        Alignment = Element.ALIGN_LEFT
+                                    };
+                                    document.Add(reportDate);
+                                }
 
                                 // Добавляем пустую строку перед таблицей
                                 document.Add(new Paragraph(" "));
@@ -245,8 +280,8 @@ namespace DPGTProject
                                 var table = new PdfPTable(data.Columns.Count);
                                 table.SetWidths(Enumerable.Repeat(1f, data.Columns.Count).ToArray());
 
-                                var boldFont = new iTextSharp.text.Font(baseFont, 10);
-                                var normalFont = new iTextSharp.text.Font(baseFont, 9);
+                                var boldFont = new Font(baseFont, 10);
+                                var normalFont = new Font(baseFont, 9);
 
                                 // Headers
                                 foreach (DataColumn col in data.Columns)
