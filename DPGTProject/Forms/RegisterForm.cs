@@ -35,7 +35,7 @@ namespace DPGTProject
                 MessageBox.Show("Пароли не совпадают!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            if (!Functions.IsRoleExists(roles_cb.Text))
+            if (!RoleManager.IsRoleExists(roles_cb.Text))
             {
                 MessageBox.Show("Указанная роль не существует!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;

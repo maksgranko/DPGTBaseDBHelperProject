@@ -125,5 +125,10 @@ namespace DPGTProject.Configs
         {
             return _roles.TryGetValue(roleName, out var role) ? role : null;
         }
+        public static bool IsRoleExists(string value)
+        {
+            if (SystemConfig.roles.Contains(value)) return true;
+            else return false;
+        }
     }
 }

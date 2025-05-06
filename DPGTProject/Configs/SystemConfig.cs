@@ -36,7 +36,8 @@ namespace DPGTProject
         #endregion --- Дополнительные функции ---
 
         #region --- Роли, необходимые для программы ---
-        public static string[] roles = new string[] { "Администратор", "Менеджер" };                                   // Здесь прописываются роли!
+        public static string[] roles = new string[] { "Администратор", "Менеджер" };                                   // Здесь прописываются роли! Вы можете добавить свою.
+                                                                                                                       // Роли добавляются в список с начала в конец. По умолчанию при отключённом выборе, выдаётся последняя роль.
 
         #region +++ Права, индивидуальные к каждой РОЛИ ПО УМОЛЧАНИЮ +++
         public static Dictionary<string, TablePermission> DefaultRolePermissions = new Dictionary<string, TablePermission>()
@@ -67,7 +68,7 @@ namespace DPGTProject
             }
         };
         #endregion +++ Права, индивидуальные к каждой РОЛИ ПО УМОЛЧАНИЮ +++
-
+                                                                                                                       // Порядок прав: ^эти^ права важнее, чем те, что ниже, они работают глобально ко всем таблицам
         #region +++ Права, индивидуальные ПО РОЛЯМ к каждой ТАБЛИЦЕ +++
         // Можно добавить другие таблицы по аналогии
         public static Dictionary<string, List<TablePermission>> RolePermissions = new Dictionary<string, List<TablePermission>>()
@@ -76,12 +77,21 @@ namespace DPGTProject
             {                                                                                                           /* ^РОЛЬ^, которой назначаются права ниже.*/
                 new TablePermission {
                     TableName = Database.Users.UsersTableName,                                                          // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
+                                                                                                                        // В данном случае, это касается именно таблицы USERS, название которой берётся из переменной
                     CanRead   =  true,                                                                                  // <--- Может ли просматривать?
                     CanWrite  =  true,                                                                                  // <--- Может ли записывать/редактировать?
                     CanDelete =  true,                                                                                  // <--- Может ли удалять?
                     CanExport =  true,                                                                                  // <--- Может ли экспортировать?
                     CanImport =  true                                                                                   // <--- Может ли импортировать?
-                },                                                                                                      // Можно добавлять таблицы дальше, аналогично.
+                },                                                                                                   
+                new TablePermission {
+                    TableName =  "Здесь_Название_Таблицы",                                                              // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
+                    CanRead   =  true,
+                    CanWrite  =  true,
+                    CanDelete =  true,
+                    CanExport =  true,
+                    CanImport =  true 
+                }, // аналогично далее
             },
         };
         #endregion +++ Права, индивидуальные ПО РОЛЯМ к каждой ТАБЛИЦЕ +++
@@ -130,7 +140,7 @@ namespace DPGTProject
         #region --- DevSpace ---
         // Системные настройки, здесь нет необходимости что-либо менять
         public static string lastError = "";
-        public static Point LastLocation = new Point(400, 300);
+        public static Point LastLocation = new Point(400, 300); // от этого вообще есть ли смысл?
         // Системные настройки, здесь нет необходимости что-либо менять
         #endregion --- DevSpace ---
     }

@@ -117,7 +117,7 @@ namespace DPGTProject
                 result = Database.ParseFirstSQLServer(databaseName);
                 if (result != null) return result;
             }
-            return $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
+            return $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False;Connection Timeout=3;";
             //Иногда работают следующие варианты:
             //return $"Data Source={Environment.MachineName}\\SQLEXPRESS;Initial Catalog={databaseName};Integrated Security=True;Encrypt=False;TrustServerCertificate=True";
             //return $"Data Source={Environment.MachineName}\\SQLEXPRESS;Initial Catalog={databaseName};Integrated Security=True;Encrypt=False";
@@ -131,8 +131,10 @@ namespace DPGTProject
                 "localhost",
                 ".",
                 ".\\SQLEXPRESS",
+                ".\\SQLSERVER01",
                 Environment.MachineName,
-                $"{Environment.MachineName}\\SQLEXPRESS"
+                $"{Environment.MachineName}\\SQLEXPRESS",
+                $"{Environment.MachineName}\\SQLSERVER01",
             };
 
             foreach (var server in defaultServers)
