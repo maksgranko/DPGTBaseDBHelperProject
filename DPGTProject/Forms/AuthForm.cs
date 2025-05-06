@@ -11,8 +11,8 @@ namespace DPGTProject
             InitializeComponent();
             if (Test.Initialized)
             {
-                login_tb.Text = "www";
-                password_tb.Text = "TestData1234@";
+                login_tb.Text = Test.login;
+                password_tb.Text = Test.password;
             }
         }
 

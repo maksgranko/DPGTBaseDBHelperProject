@@ -144,54 +144,123 @@ namespace DPGTProject.Forms
 
         private Control CreateInputControl(string columnName, object type)
         {
+            // Для bool полей возвращаем обычный CheckBox
+            if (type == typeof(bool))
+                return new CheckBox { Width = 150 };
+
+            // Создаем основной контрол ввода
+            Control inputControl;
 #pragma warning disable CS0252
             if (type == typeof(string))
-                return new TextBox { Width = 150 };
-            if (type == typeof(int))
-                return new NumericUpDown
+                inputControl = new TextBox { Width = 150 };
+            else if (type == typeof(int))
+                inputControl = new NumericUpDown
                 {
                     Minimum = int.MinValue,
                     Maximum = int.MaxValue,
                     DecimalPlaces = 0,
                     Width = 150
                 };
-            if (type == typeof(double) || type == typeof(decimal) || type == typeof(float))
-                return new NumericUpDown
+            else if (type == typeof(double) || type == typeof(decimal) || type == typeof(float))
+                inputControl = new NumericUpDown
                 {
                     Minimum = decimal.MinValue,
                     Maximum = decimal.MaxValue,
                     DecimalPlaces = 2,
                     Width = 150
                 };
-            if (type == typeof(DateTime))
-                return new DateTimePicker
+            else if (type == typeof(DateTime))
+                inputControl = new DateTimePicker
                 {
                     Format = DateTimePickerFormat.Short,
                     Width = 150
                 };
-            if (type == typeof(bool))
-                return new CheckBox { Width = 150 };
+            else
+            {
+                SystemConfig.lastError = $"Неподдерживаемый тип для {columnName}";
+                throw new ArgumentException(SystemConfig.lastError);
+            }
 #pragma warning restore CS0252
 
-            SystemConfig.lastError = $"Неподдерживаемый тип для {columnName}";
-            throw new ArgumentException(SystemConfig.lastError);
+            // Проверяем, поддерживает ли колонка NULL значения
+            if (Database.IsNullableColumn(_tableName, columnName))
+            {
+                // Создаем контейнер для основного контрола и чекбокса NULL
+                var container = new Panel
+                {
+                    Width = 180,
+                    Height = 30
+                };
+
+                // Настраиваем основной контрол
+                inputControl.Width = 120;
+                inputControl.Left = 0;
+                container.Controls.Add(inputControl);
+
+                // Добавляем чекбокс NULL
+                var nullCheckBox = new CheckBox
+                {
+                    Text = "NULL",
+                    Left = 125,
+                    Width = 50,
+                    Checked = false
+                };
+
+                nullCheckBox.CheckedChanged += (sender, e) =>
+                {
+                    inputControl.Enabled = !nullCheckBox.Checked;
+                    if (nullCheckBox.Checked)
+                    {
+                        if (inputControl is TextBox textBox) textBox.Text = string.Empty;
+                        else if (inputControl is NumericUpDown numeric) numeric.Value = 0;
+                        else if (inputControl is DateTimePicker datePicker) datePicker.Value = DateTime.Now;
+                    }
+                };
+
+                container.Controls.Add(nullCheckBox);
+                return container;
+            }
+
+            return inputControl;
         }
 
         private void SetControlValue(Control control, object value)
         {
+            // Если это Panel с чекбоксом NULL
+            if (control is Panel panel && panel.Controls.Count == 2)
+            {
+                var inputControl = panel.Controls[0];
+                var nullCheckBox = panel.Controls[1] as CheckBox;
+
+                if (value == null || value is DBNull)
+                {
+                    nullCheckBox.Checked = true;
+                    inputControl.Enabled = false;
+                    return;
+                }
+
+                nullCheckBox.Checked = false;
+                inputControl.Enabled = true;
+                SetControlValue(inputControl, value);
+                return;
+            }
+
             switch (control)
             {
                 case TextBox textBox:
                     textBox.Text = value?.ToString();
                     break;
                 case NumericUpDown numericUpDown:
-                    numericUpDown.Value = Convert.ToDecimal(value);
+                    numericUpDown.Value = value == null ? 0 : Convert.ToDecimal(value);
                     break;
                 case DateTimePicker dateTimePicker:
-                    dateTimePicker.Value = Convert.ToDateTime(value);
+                    dateTimePicker.Value = value == null ? DateTime.Now : Convert.ToDateTime(value);
                     break;
                 case CheckBox checkBox:
-                    checkBox.Checked = Convert.ToBoolean(value);
+                    checkBox.Checked = value != null && Convert.ToBoolean(value);
+                    break;
+                case ComboBox comboBox:
+                    comboBox.SelectedItem = value;
                     break;
             }
         }
@@ -204,6 +273,13 @@ namespace DPGTProject.Forms
                 {
                     object value = GetControlValue(control.Value);
 
+                    // Для Panel с чекбоксом NULL пропускаем проверку
+                    if (control.Value is Panel panel)
+                    {
+                        var checkbox = panel.Controls.OfType<CheckBox>().FirstOrDefault();
+                        if (checkbox != null && checkbox.Checked) continue;
+                    }
+
                     if (value == null ||
                         (value is string strValue && string.IsNullOrWhiteSpace(strValue)))
                     {
@@ -213,7 +289,7 @@ namespace DPGTProject.Forms
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Ошибка валидации {control.Key}: {ex.Message}");
+                    MessageBox.Show($"Ошибка валивации {control.Key}: {ex.Message}");
                     return false;
                 }
             }
@@ -222,14 +298,32 @@ namespace DPGTProject.Forms
 
         private object GetControlValue(Control control)
         {
+            // Если это Panel с чекбоксом NULL и вложенным контролом
+            if (control is Panel panel && panel.Controls.Count == 2)
+            {
+                var inputControl = panel.Controls[0];
+                var nullCheckBox = panel.Controls[1] as CheckBox;
+
+                // Если чекбокс NULL отмечен - возвращаем null
+                if (nullCheckBox != null && nullCheckBox.Checked)
+                    return null;
+
+                // Для Foreign Key проверяем специальные условия
+                if (inputControl is ComboBox cb && cb.SelectedItem == null)
+                    return null;
+
+                control = inputControl;
+            }
             if (control is TextBox textBox)
-                return textBox.Text;
+                return string.IsNullOrEmpty(textBox.Text) ? null : textBox.Text;
             if (control is NumericUpDown numericUpDown)
                 return numericUpDown.Value;
             if (control is DateTimePicker dateTimePicker)
                 return dateTimePicker.Value;
             if (control is CheckBox checkBox)
                 return checkBox.Checked;
+            if (control is ComboBox comboBox)
+                return comboBox.SelectedItem;
 
             throw new ArgumentException("Неподдерживаемый тип контрола");
         }
@@ -348,13 +442,10 @@ namespace DPGTProject.Forms
         private string FormatSqlValue(object value)
         {
             if (value == null) return "NULL";
-            if (value is string strValue)
-            {
-                // Экранируем одинарные кавычки для SQL
-                return $"'{strValue.Replace("'", "''")}'";
-            }
+            if (value is string strValue) return $"'{strValue.Replace("'", "''")}'";
             if (value is DateTime dt) return $"'{dt:yyyy-MM-dd HH:mm:ss}'";
             if (value is bool boolValue) return boolValue ? "1" : "0";
+            if (value is decimal || value is float || value is double) return value.ToString().Replace(",",".");
             return value.ToString();
         }
     }
