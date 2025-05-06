@@ -400,10 +400,20 @@ namespace DPGTProject
                         {
                             keyValue = selectedRow.Cells[notTranslated].Value;
                         }
-                        string formattedValue = keyValue is string || keyValue is DateTime
-                        ? $"'{keyValue}'"
-                        : keyValue.ToString();
-
+                        string formattedValue;
+                        if (keyValue is string s)
+                        {
+                            formattedValue = $"'{s.Replace("'", "''")}'"; // Экранирование одинарных кавычек
+                        }
+                        else if (keyValue is DateTime dt)
+                        {
+                            formattedValue = $"'{dt:yyyy-MM-ddTHH:mm:ss}'"; // Формат ISO 8601 для SQL Server
+                        }
+                        else
+                        {
+                            formattedValue = keyValue.ToString(); // Другие типы
+                        }
+                        
                         string query = form.GeneratedUpdateQuery
                             .Replace("%TABLENAME%", TableName)
                             .Replace("%WHERE%", $"{keyColumn} = {formattedValue}");

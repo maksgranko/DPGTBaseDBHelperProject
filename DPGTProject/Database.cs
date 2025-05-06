@@ -49,7 +49,14 @@ namespace DPGTProject
                     string query = $"SELECT * FROM {UsersTableName} WHERE {UsersTableColumnsNames["Login"]} = @Login";
                     SqlDataAdapter da = new SqlDataAdapter(query, conn);
                     da.SelectCommand.Parameters.AddWithValue("@Login", login);
-                    da.Fill(dt);
+                    try
+                    {
+                        da.Fill(dt);
+                    }
+                    catch
+                    {
+                        return null;
+                    }
                 }
                 return dt.Rows.Count > 0 ? dt.Rows[0] : null;
             }
@@ -62,7 +69,7 @@ namespace DPGTProject
             {
                 using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
                 {
-                    string query = $"INSERT INTO {UsersTableName} " +
+                    string query = $"INSERT INTO {UsersTableName}" +
                                    $"({UsersTableColumnsNames["Login"]}, " +
                                    $"{UsersTableColumnsNames["Password"]}, " +
                                    $"{UsersTableColumnsNames["Role"]}) " +
@@ -503,6 +510,19 @@ namespace DPGTProject
                 da.Fill(dt);
             }
             return dt.Rows.Cast<DataRow>().Select(r => r[0].ToString()).ToArray();
+        }
+        public static bool IsNullableColumn(string tableName, string columnName)
+        {
+            using (var connection = new SqlConnection(SystemConfig.connectionString))
+            {
+                connection.Open();
+                var command = new SqlCommand($"SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @tableName AND COLUMN_NAME = @columnName", connection);
+                command.Parameters.AddWithValue("@tableName", tableName);
+                command.Parameters.AddWithValue("@columnName", columnName);
+
+                var isNullable = command.ExecuteScalar();
+                return isNullable != null && isNullable.ToString().ToLower() == "yes";
+            }
         }
         internal static void PreCheck()
         {
