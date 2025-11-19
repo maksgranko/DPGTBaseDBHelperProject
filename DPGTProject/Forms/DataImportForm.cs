@@ -1,4 +1,5 @@
 using DPGTProject.Configs;
+using DPGTProject.Databases;
 using DPGTProject.Forms;
 using OfficeOpenXml;
 using System;
@@ -104,7 +105,7 @@ namespace DPGTProject
             }
 
             string tableName = SystemConfig.UntranslateComboBox(tableComboBox.Text);
-            var dbSchema = Database.GetTableSchema(tableName);
+            var dbSchema = MSSQL.GetTableSchema(tableName);
 
             // Проверка количества колонок
             if (_importData.Columns.Count != dbSchema.Keys.Count)
@@ -195,7 +196,7 @@ namespace DPGTProject
             try
             {
                 string tableName = SystemConfig.UntranslateComboBox(tableComboBox.Text);
-                Database.ImportData(tableName, _importData);
+                MSSQL.ImportData(tableName, _importData);
 
                 MessageBox.Show("Данные успешно импортированы",
                     "Успешно", MessageBoxButtons.OK, MessageBoxIcon.Information);

@@ -1,4 +1,5 @@
 using DPGTProject.Configs;
+using DPGTProject.Databases;
 using DPGTProject.Forms;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
@@ -96,7 +97,7 @@ namespace DPGTProject
                     catch {
                         // TODO: rep[]; 
                     }
-                    reportData = Database.Translate(reportData, tableName);
+                    reportData = MSSQL.Translate(reportData, tableName);
 
                     if (reportData == null)
                     {
@@ -113,9 +114,9 @@ namespace DPGTProject
 #pragma warning disable CS0162
                         // Здесь алгоритм репортов.
                         case "Отчёт 1":
-                            reportData = Database.GetDataTableFromSQL("Здесь_Вы_Задаёте_SQL-запрос, ну это к примеру"); // Получение данных
+                            reportData = MSSQL.GetDataTableFromSQL("Здесь_Вы_Задаёте_SQL-запрос, ну это к примеру"); // Получение данных
                             // Примечание: Для дат с-по в SQL используйте переменные dtp(DateTimePicker, intellisense подскажет при написании)
-                            reportData = Database.Translate(reportData, "Пример 1");                                    // Как переводить колоны у таблиц
+                            reportData = MSSQL.Translate(reportData, "Пример 1");                                    // Как переводить колоны у таблиц
                             throw new NotImplementedException("Задайте корректный алгоритм репорта!");                  // Стереть, после того, как функция будет реализована корректно
                             break;                                                                                      // Ниже можно указать выполнение кода, при выборе любого из отчётов, работает также по названию.
                         case "Отчёт 2":
@@ -175,7 +176,7 @@ namespace DPGTProject
                         try
                         {
                             // Получаем данные таблицы
-                            DataTable tableData = Database.GetTableData(tableName);
+                            DataTable tableData = MSSQL.GetTableData(tableName);
 
                             // Создаем Excel файл
                             string filePath = Path.Combine(exportDir, $"{tableName}.xlsx");

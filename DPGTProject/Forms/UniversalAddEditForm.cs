@@ -1,3 +1,4 @@
+using DPGTProject.Databases;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -193,7 +194,7 @@ namespace DPGTProject.Forms
 #pragma warning restore CS0252
 
             // Проверяем, поддерживает ли колонка NULL значения
-            if (Database.IsNullableColumn(_tableName, columnName))
+            if (MSSQL.IsNullableColumn(_tableName, columnName))
             {
                 // Создаем контейнер для основного контрола и чекбокса NULL
                 var container = new Panel
@@ -408,7 +409,7 @@ namespace DPGTProject.Forms
                     }
 
                     // Не добавляем identity колонки в INSERT
-                    if (!Database.IsIdentityColumn(_tableName, untranslatedColumn))
+                    if (!MSSQL.IsIdentityColumn(_tableName, untranslatedColumn))
                     {
                         columns.Add(untranslatedColumn);
                         values.Add(FormatSqlValue(GetControlValue(control.Value)));
@@ -435,7 +436,7 @@ namespace DPGTProject.Forms
                     }
 
                     // Не добавляем identity колонки в SET
-                    if (!Database.IsIdentityColumn(_tableName, untranslatedColumn))
+                    if (!MSSQL.IsIdentityColumn(_tableName, untranslatedColumn))
                     {
                         setParts.Add($"{untranslatedColumn} = {FormatSqlValue(GetControlValue(control.Value))}");
                     }

@@ -6,11 +6,11 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace DPGTProject
+namespace DPGTProject.Databases
 {
-    public static class Database
+    public static class MSSQL
     {
-        public static class Users
+        public static class Users 
         {
             public static string UsersTableName = "Users";                                                                     // Если вам необходимо изменить таблицу "Users", измените здесь
             public static Dictionary<string, string> UsersTableColumnsNames = new Dictionary<string, string> {                 // Если вам необходимо изменить названия колонок в таблице "Users", измените здесь
@@ -174,7 +174,7 @@ namespace DPGTProject
             if (auto) // флаг автоматического определения строки подключения
             {
                 string result = null;
-                result = Database.ParseFirstSQLServer(databaseName);
+                result = ParseFirstSQLServer(databaseName);
                 if (result != null) return result;
             }
             return $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False;Connection Timeout=3;";
@@ -579,7 +579,7 @@ namespace DPGTProject
         }
         internal static void PreCheck()
         {
-            if (!Database.CheckConnection())
+            if (!CheckConnection())
             {
                 throw new Exception("Ошибка подключения к базе данных!");
             }

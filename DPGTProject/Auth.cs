@@ -1,6 +1,7 @@
-﻿using System;
+﻿using DPGTProject.Databases;
+using System;
 using System.Text.RegularExpressions;
-using static DPGTProject.Database;
+using static DPGTProject.Databases.MSSQL;
 
 namespace DPGTProject
 {
@@ -8,12 +9,12 @@ namespace DPGTProject
     {
         public static string GetUserStatus(string login)
         {
-            return Database.Users.GetUserStatus(login);
+            return MSSQL.Users.GetUserStatus(login);
         }
 
         public static bool CheckIsUserValid(string login, string password)
         {
-            var user = Database.Users.GetByLogin(login);
+            var user = MSSQL.Users.GetByLogin(login);
             if (user == null) return false;
 
             string storedHash = user[Users.UsersTableColumnsNames["Password"]].ToString();
@@ -24,7 +25,7 @@ namespace DPGTProject
 
         public static bool CheckIsUserExists(string login)
         {
-            return Database.Users.GetByLogin(login) != null;
+            return MSSQL.Users.GetByLogin(login) != null;
         }
 
         public static bool IsPasswordValid(string password)
@@ -50,7 +51,7 @@ namespace DPGTProject
             }
 
             string hashedPassword = SimpleHash(password);
-            bool result = Database.Users.Create(login, hashedPassword, role);
+            bool result = MSSQL.Users.Create(login, hashedPassword, role);
             if (result) SystemConfig.lastError = "Произошла ошибка при создании пользователя!";
             return result;
         }

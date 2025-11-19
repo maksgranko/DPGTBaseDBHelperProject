@@ -1,4 +1,5 @@
 using DPGTProject.Configs;
+using DPGTProject.Databases;
 using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
@@ -93,11 +94,11 @@ namespace DPGTProject
             {
                 if (request)
                 {
-                    Database.GetDataTableFromSQL(SQLRequest, out DataTable dt);
+                    MSSQL.GetDataTableFromSQL(SQLRequest, out DataTable dt);
                     _originalData = dt;
                 }
-                else _originalData = Database.GetAll(TableName);
-                dataGridView1.DataSource = Database.Translate(_originalData, TableName);
+                else _originalData = MSSQL.GetAll(TableName);
+                dataGridView1.DataSource = MSSQL.Translate(_originalData, TableName);
                 statusLabel.Text = $"Загружено записей: {_originalData.Rows.Count}";
             }
             catch
@@ -118,7 +119,7 @@ namespace DPGTProject
             try
             {
                 var changedData = (DataTable)dataGridView1.DataSource;
-                var untranslated = Database.Untranslate(changedData, TableName);
+                var untranslated = MSSQL.Untranslate(changedData, TableName);
 
                 // Проверяем, есть ли удаленные строки
                 if (untranslated.GetChanges(DataRowState.Deleted) != null &&
@@ -128,7 +129,7 @@ namespace DPGTProject
                     return;
                 }
 
-                Database.BulkUpdate(TableName, untranslated);
+                MSSQL.BulkUpdate(TableName, untranslated);
             }
             catch
             {
@@ -285,7 +286,7 @@ namespace DPGTProject
             }
             catch { MessageBox.Show("Не удалось применить фильтр!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
 
-            dataGridView1.DataSource = Database.Translate(_filteredData, TableName);
+            dataGridView1.DataSource = MSSQL.Translate(_filteredData, TableName);
             statusLabel.Text = $"Отфильтровано записей: {_filteredData.Rows.Count}";
         }
 
@@ -318,7 +319,7 @@ namespace DPGTProject
                     try
                     {
                         string query = form.GeneratedInsertQuery.Replace("%TABLENAME%", TableName);
-                        Database.ExecuteNonQuery(query);
+                        MSSQL.ExecuteNonQuery(query);
                         LoadData();
                         statusLabel.Text = "Запись успешно добавлена";
                     }
@@ -410,7 +411,7 @@ namespace DPGTProject
                             .Replace("%TABLENAME%", TableName)
                             .Replace("%WHERE%", $"{keyColumn} = {formattedValue}");
 
-                        Database.ExecuteNonQuery(query);
+                        MSSQL.ExecuteNonQuery(query);
                         LoadData();
                         statusLabel.Text = "Запись успешно изменена";
                     }
