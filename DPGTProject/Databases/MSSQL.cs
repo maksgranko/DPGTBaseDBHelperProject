@@ -6,9 +6,9 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace DPGTProject
+namespace DPGTProject.Databases
 {
-    public static class Database
+    public static class MSSQL
     {
         public static class Users
         {
@@ -174,7 +174,7 @@ namespace DPGTProject
             if (auto) // флаг автоматического определения строки подключения
             {
                 string result = null;
-                result = Database.ParseFirstSQLServer(databaseName);
+                result = ParseFirstSQLServer(databaseName);
                 if (result != null) return result;
             }
             return $"Data Source={Environment.MachineName};Initial Catalog={databaseName};Integrated Security=True;Encrypt=False;Connection Timeout=3;";
@@ -579,7 +579,7 @@ namespace DPGTProject
         }
         internal static void PreCheck()
         {
-            if (!Database.CheckConnection())
+            if (!CheckConnection())
             {
                 throw new Exception("Ошибка подключения к базе данных!");
             }

@@ -1,4 +1,5 @@
 ﻿using DPGTProject.Configs;
+using DPGTProject.Databases;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -10,7 +11,7 @@ namespace DPGTProject
         #region --- UserSpace ---
         #region --- Работа с базой данных ---
         public static string databaseName = "";                                                                         // !!! ВВЕДИТЕ НАЗВАНИЕ БД, ЭТО НЕОБХОДИМО В ПЕРВУЮ ОЧЕРЕДЬ !!!
-        public static string connectionString = Database.ConnectionStringBuilder(databaseName);                         // !!! ПОМЕНЯТЬ ОСНОВУ СТРОКИ МОЖНО В Database.cs МЕТОД: ConnectionStringBuilder !!!
+        public static string connectionString = MSSQL.ConnectionStringBuilder(databaseName);                         // !!! ПОМЕНЯТЬ ОСНОВУ СТРОКИ МОЖНО В Database.cs МЕТОД: ConnectionStringBuilder !!!
         #endregion --- Работа с базой данных ---
 
         #region --- Дополнительные функции ---
@@ -76,7 +77,7 @@ namespace DPGTProject
             ["Администратор"] = new List<TablePermission>
             {                                                                                                           /* ^РОЛЬ^, которой назначаются права ниже.*/
                 new TablePermission {
-                    TableName = Database.Users.UsersTableName,                                                          // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
+                    TableName = MSSQL.Users.UsersTableName,                                                          // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
                                                                                                                         // В данном случае, это касается именно таблицы USERS, название которой берётся из переменной
                     CanRead   =  true,                                                                                  // <--- Может ли просматривать?
                     CanWrite  =  true,                                                                                  // <--- Может ли записывать/редактировать?
@@ -141,7 +142,7 @@ namespace DPGTProject
             ["Sample1"] = "Пример_названий_в_combobox2",
             ["Sample2"] = "Пример_названий_в_combobox3",
             ["Sample3"] = "Пример_названий_в_combobox4",
-            [Database.Users.UsersTableName] = "Пользователи" // Строку не трогать, она нужна для перевода
+            [MSSQL.Users.UsersTableName] = "Пользователи" // Строку не трогать, она нужна для перевода
         };
         #endregion --- Переводы таблиц и других элементов ---
         #endregion --- UserSpace ---

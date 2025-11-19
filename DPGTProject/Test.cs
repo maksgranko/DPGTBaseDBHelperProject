@@ -1,4 +1,6 @@
-﻿namespace DPGTProject
+﻿using DPGTProject.Databases;
+
+namespace DPGTProject
 {
     internal class Test
     {
@@ -9,7 +11,7 @@
         {
             SystemConfig.addRolesWhenRegistering = true;
             SystemConfig.databaseName = ""; // Имя тестового БД
-            SystemConfig.connectionString = Database.ConnectionStringBuilder(SystemConfig.databaseName); // Переинициализация БД
+            SystemConfig.connectionString = MSSQL.ConnectionStringBuilder(SystemConfig.databaseName); // Переинициализация БД
             // Database.Users.Create(Test.login, Test.password, SystemConfig.roles[0]); // создать тест-юзера
             Test.login = "q"; // Тестовый автологин
             Test.password = "Qwe123123@";  // Тестовый автопароль

@@ -1,3 +1,4 @@
+using DPGTProject.Databases;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +24,7 @@ namespace DPGTProject
             TempDelete.AddRange(removeFromTableWhenStart);
             if (tableAutodetect)
             {
-                tablesTemp = Database.GetTables().ToList();
+                tablesTemp = MSSQL.GetTables().ToList();
                 TempDelete.AddRange(removeFromTableWhenAutodetect);
             }
             else tablesTemp = SystemConfig.tables.ToList();

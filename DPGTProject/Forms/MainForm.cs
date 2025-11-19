@@ -1,4 +1,5 @@
 ﻿using DPGTProject.Configs;
+using DPGTProject.Databases;
 using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
@@ -41,7 +42,7 @@ namespace DPGTProject
             role_lb.Text = "Ваша роль: " + UserConfig.userRole;
 
             // Получаем список таблиц
-            string[] allTables = SystemConfig.tableAutodetect ? Database.GetTables(false) : SystemConfig.tables;
+            string[] allTables = SystemConfig.tableAutodetect ? MSSQL.GetTables(false) : SystemConfig.tables;
 
             // Парс виртуальных таблиц
             if (SystemConfig.virtualTables != null)

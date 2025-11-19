@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using DPGTProject.Databases;
+using System.Data;
 
 namespace DPGTProject
 {
@@ -20,7 +21,7 @@ namespace DPGTProject
         {
             userLogin = login;
             userRole = Auth.GetUserStatus(login);
-            userData = Database.Users.GetByLogin(login);
+            userData = MSSQL.Users.GetByLogin(login);
             userId = (int)userData[0];
         }
 

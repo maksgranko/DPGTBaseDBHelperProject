@@ -1,4 +1,5 @@
 ﻿using DPGTProject.Configs;
+using DPGTProject.Databases;
 using System;
 using System.Windows.Forms;
 
@@ -15,7 +16,7 @@ namespace DPGTProject
             Test.Init(); // Инициирует тестовые данные для проекта. Убрать, если не используется(вне разработки) В Test.cs прописываются тестовые значения.
             SystemConfig.Initialize();
             RoleManager.Initialize();
-            Database.PreCheck();
+            MSSQL.PreCheck();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new AuthForm());
