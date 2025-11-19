@@ -2,6 +2,7 @@
 using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -40,9 +41,17 @@ namespace DPGTProject
             role_lb.Text = "Ваша роль: " + UserConfig.userRole;
 
             // Получаем список таблиц
-            tables = SystemConfig.tableAutodetect
-                ? Database.GetTables(false) // Получаем таблицы из БД если включено автоопределение
-                : SystemConfig.tables; // Иначе берем из конфига
+            string[] allTables = SystemConfig.tableAutodetect ? Database.GetTables(false) : SystemConfig.tables;
+
+            // Парс виртуальных таблиц
+            if (SystemConfig.virtualTables != null)
+            {
+                List<string> a = new List<string>();
+                a.AddRange(allTables);
+                a.AddRange(SystemConfig.virtualTables);
+                allTables = a.Distinct().ToArray();
+                a.Clear();
+            }
 
             if (tables == null || tables.Length == 0)
                 throw new NullReferenceException("Не найдено ни одной таблицы!");
@@ -77,7 +86,7 @@ namespace DPGTProject
             export_btn.Visible = hasExportRight;
         }
 
-        private void unlogin_btn_Click(object sender, EventArgs e)
+        public void unlogin_btn_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("Вы точно желаете выйти из аккаунта?", "Внимание!", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.No) return;
 
@@ -124,10 +133,31 @@ namespace DPGTProject
             }
             try
             {
-                // Получаем оригинальное название таблицы перед открытием
-                string tableName = SystemConfig.UntranslateComboBox(table_cb.Text);
-                ShowOrActivateForm<UniversalTableViewerForm>(tableName);
-
+                if (SystemConfig.virtualTables.Contains(SystemConfig.UntranslateComboBox(table_cb.Text)))
+                {
+                    string request = "";
+                    
+                    switch (SystemConfig.UntranslateComboBox(table_cb.Text))
+                    {
+                        case "VT_Client":        // ПРИМЕР ВИРТУАЛЬНОЙ ТАБЛИЦЫ!
+                            request = "SELECT TOP (1000) [ID]\r\n      " +
+                                ",[CodeName]\r\n      " +
+                                ",[Type]\r\n      " +
+                                ",[PricePerNight]\r\n      " +
+                                ",[Capacity]\r\n      " +
+                                ",[IsAvailable]\r\n      " +
+                                ",[CleaningStatus]\r\n  " +
+                                "FROM [SinaiDB].[dbo].[Rooms]\r\n";
+                            break;
+                    }
+                    ShowOrActivateForm<UniversalTableViewerForm>(table_cb.Text, request, true);
+                }
+                else
+                {
+                    // Получаем оригинальное название таблицы перед открытием
+                    string tableName = SystemConfig.UntranslateComboBox(table_cb.Text);
+                    ShowOrActivateForm<UniversalTableViewerForm>(tableName);
+                }
             }
             catch (Exception ex)
             {

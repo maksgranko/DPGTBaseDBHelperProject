@@ -11,11 +11,13 @@ namespace DPGTProject
     public partial class UniversalTableViewerForm : BaseForm
     {
         private string _tableName;
-        private string _currentFilter = string.Empty;
+        private string _currentFilter;
         private DataTable _originalData;
         private DataTable _filteredData;
         private List<DataGridViewCell> _searchResults = new List<DataGridViewCell>();
         private int _currentSearchIndex = -1;
+        private bool request = false;
+        private string SQLRequest = "";
 
         public string TableName
         {
@@ -39,27 +41,21 @@ namespace DPGTProject
             string role = UserConfig.userRole;
             string table = _tableName ?? "";
             bool write = RoleManager.CheckAccess(role, table, "write");
-            export_btn.Visible = SystemConfig.exportRightInTables && RoleManager.CheckAccess(role, table, "export");
+            export_btn.Visible = this.request || (SystemConfig.exportRightInTables && RoleManager.CheckAccess(role, table, "export"));
             help_btn.Visible = SystemConfig.helpButtonInTables;
             toolStripSeparator2.Visible = help_btn.Visible || export_btn.Visible;
 
-            filter_label.Visible = SystemConfig.enableFilterInTables;
-            filter_tb.Visible = SystemConfig.enableFilterInTables;
+            filter_label.Visible = filter_tb.Visible = SystemConfig.enableFilterInTables;
             toolStripSeparator2.Visible = filter_label.Visible || help_btn.Visible || export_btn.Visible;
 
-            find_label.Visible = SystemConfig.enableSearchInTables;
-            find_next_btn.Visible = SystemConfig.enableSearchInTables;
-            find_previous_btn.Visible = SystemConfig.enableSearchInTables;
-            find_tb.Visible = SystemConfig.enableSearchInTables;
+            find_label.Visible = find_next_btn.Visible = find_previous_btn.Visible = find_tb.Visible = SystemConfig.enableSearchInTables;
             toolStripSeparator1.Visible = SystemConfig.enableSearchInTables;
 
-            exit_btn.Visible = SystemConfig.moreExitButtons;
-            toolStripSeparator5.Visible = SystemConfig.moreExitButtons;
+            exit_btn.Visible = toolStripSeparator5.Visible = SystemConfig.moreExitButtons;
 
-            addrow_btn.Visible = SystemConfig.additionalButtonsInTables && write;
-            editrow_btn.Visible = SystemConfig.additionalButtonsInTables && write;
-            save_btn.Visible = write;
-            removerow_btn.Visible = write && RoleManager.CheckAccess(role, table, "delete");
+            addrow_btn.Visible = editrow_btn.Visible = !request && SystemConfig.additionalButtonsInTables && write;
+            save_btn.Visible = !request && write;
+            removerow_btn.Visible = !request && (write && RoleManager.CheckAccess(role, table, "delete"));
         }
 
         private void DataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
@@ -83,12 +79,24 @@ namespace DPGTProject
             TableName = tableName;
             UpdateButtonsVisibility();
         }
+        public UniversalTableViewerForm(string tableName, string SQLReq, bool req) : this()
+        {
+            SQLRequest = SQLReq;
+            request = req;
+            TableName = tableName;
+            UpdateButtonsVisibility();
+        }
 
         private void LoadData()
         {
             try
             {
-                _originalData = Database.GetAll(TableName);
+                if (request)
+                {
+                    Database.GetDataTableFromSQL(SQLRequest, out DataTable dt);
+                    _originalData = dt;
+                }
+                else _originalData = Database.GetAll(TableName);
                 dataGridView1.DataSource = Database.Translate(_originalData, TableName);
                 statusLabel.Text = $"Загружено записей: {_originalData.Rows.Count}";
             }
@@ -181,10 +189,9 @@ namespace DPGTProject
             SearchAllColumns();
             if (_searchResults.Count == 0) return;
 
-            _currentSearchIndex = isNext
-                ? (_currentSearchIndex + 1) % _searchResults.Count
-                : (_currentSearchIndex - 1 + _searchResults.Count) % _searchResults.Count;
-
+            _currentSearchIndex = isNext ? _currentSearchIndex + 1 : _currentSearchIndex - 1;
+            if (_currentSearchIndex > _searchResults.Count) _currentSearchIndex = _searchResults.Count-1;
+            else if (_currentSearchIndex < 0) _currentSearchIndex = 0;
             NavigateToResult();
         }
 
@@ -210,7 +217,6 @@ namespace DPGTProject
 
             if (_searchResults.Count > 0)
             {
-                _currentSearchIndex = 0;
                 statusLabel.Text = $"Найдено: {_searchResults.Count}";
             }
             else
@@ -221,8 +227,6 @@ namespace DPGTProject
 
         private void NavigateToResult()
         {
-            if (_currentSearchIndex < 0 || _currentSearchIndex >= _searchResults.Count) return;
-
             var cell = _searchResults[_currentSearchIndex];
             dataGridView1.ClearSelection();
             dataGridView1.CurrentCell = cell;
@@ -256,42 +260,30 @@ namespace DPGTProject
                     {
                         string condition = null;
 
-                        if (column.DataType == typeof(string))
-                        {
-                            condition = $"{column.ColumnName} LIKE '%{filterText}%'";
-                        }
+                        if (column.DataType == typeof(string)) condition = $"[{column.ColumnName}] LIKE '%{filterText}%'";
                         else if (column.DataType == typeof(int) || column.DataType == typeof(decimal))
                         {
                             if (int.TryParse(filterText, out _) || decimal.TryParse(filterText, out _))
                             {
-                                condition = $"{column.ColumnName} = {filterText}";
+                                condition = $"[{column.ColumnName}] = {filterText}";
                             }
                         }
                         else if (column.DataType == typeof(DateTime))
                         {
-                            if (DateTime.TryParse(filterText, out _))
-                            {
-                                condition = $"{column.ColumnName} = #{filterText}#";
-                            }
+                            if (DateTime.TryParse(filterText, out _)) condition = $"[{column.ColumnName}] = #{filterText}#";
                         }
 
-                        if (!string.IsNullOrEmpty(condition))
-                        {
-                            filterParts.Add(condition);
-                        }
+                        if (!string.IsNullOrEmpty(condition)) filterParts.Add(condition);
                     }
 
                     string filterExpression = string.Join(" OR ", filterParts);
 
                     _filteredData = _originalData.Clone();
                     var rows = _originalData.Select(filterExpression);
-                    foreach (var row in rows)
-                    {
-                        _filteredData.ImportRow(row);
-                    }
+                    foreach (var row in rows) _filteredData.ImportRow(row);
                 }
             }
-            catch { MessageBox.Show("Не удалось применить фильтр!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            catch { MessageBox.Show("Не удалось применить фильтр!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
 
             dataGridView1.DataSource = Database.Translate(_filteredData, TableName);
             statusLabel.Text = $"Отфильтровано записей: {_filteredData.Rows.Count}";
@@ -458,6 +450,7 @@ namespace DPGTProject
                 reportForm.radioNormalTable.Checked = true;
 
                 // Установить выбранную таблицу в комбобокс
+                if(!reportForm.reportTypeComboBox.Items.Contains(_tableName)) reportForm.reportTypeComboBox.Items.Add(_tableName);
                 reportForm.reportTypeComboBox.SelectedItem = SystemConfig.TranslateComboBox(_tableName);
 
                 // Установить данные для экспорта

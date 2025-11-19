@@ -10,6 +10,8 @@ namespace DPGTProject
         {
             MessageBox.Show("Разработчики: \n- Гранько Максим", "О проекте", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
+        
         public static void Exit()
         {
             Application.Exit();

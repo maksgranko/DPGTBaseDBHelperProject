@@ -4,13 +4,6 @@ using static DPGTProject.Database;
 
 namespace DPGTProject
 {
-    public class User
-    {
-        public int Id { get; set; }
-        public string Login { get; set; }
-        public string Role { get; set; }
-    }
-
     public static class Auth
     {
         public static string GetUserStatus(string login)
@@ -62,7 +55,7 @@ namespace DPGTProject
             return result;
         }
 
-        private static string SimpleHash(string input)
+        public static string SimpleHash(string input)
         {
             using (var sha256 = System.Security.Cryptography.SHA256.Create())
             {

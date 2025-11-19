@@ -100,6 +100,7 @@ namespace DPGTProject
 
         #region --- Таблицы и автоопределение таблиц ---
         public static string[] tables = new string[] { };                                                               // Пример заполнения: tables = new string[] { "Documents", "DocumentHistory", "Fines", "Owners", "Violations" }; (!) НЕОБХОДИМО ОТКЛЮЧИТЬ АВТООПРЕДЕЛЕНИЕ ДЛЯ КОРРЕКТНОЙ РАБОТЫ!
+        public static string[] virtualTables = new string[] { };                                                        // Если необходимо создать виртуальную таблицу со своей логикой работы
         public static string[] removeFromTableWhenStart = new string[] { };  // (!) мб стало бесполезным из-за ролей    // Какие таблицы удалять, после запуска(из добавленных вручную или автоматически добавленных)
         public static bool tableAutodetect = true;                                                                      // Включить автоопределение таблиц из базы данных
         public static string[] removeFromTableWhenAutodetect = new string[] { };                                        // (!) Какие таблицы удалять, после автоматического определения (!) Не работает если отключён автодетект.
@@ -125,7 +126,14 @@ namespace DPGTProject
                 ["Sample1"] = "Пример_поля_таблицы1",
                 ["Sample2"] = "Пример_поля_таблицы2",
                 ["Sample3"] = "Пример_поля_таблицы3"
-            }
+            },
+            ["Users"] = new Dictionary<string, string>()
+            {
+                ["UserID"] = "Идентификатор",
+                ["Login"] = "Логин",
+                ["Password"] = "Пароль",
+                ["Role"] = "Роль"
+            },
         };
         public static Dictionary<string, string> TableTranslations = new Dictionary<string, string>()
         {
@@ -139,6 +147,7 @@ namespace DPGTProject
         #endregion --- UserSpace ---
         #region --- DevSpace ---
         // Системные настройки, здесь нет необходимости что-либо менять
+        public static MainForm mainForm;
         public static string lastError = "";
         public static Point LastLocation = new Point(400, 300); // от этого вообще есть ли смысл?
         // Системные настройки, здесь нет необходимости что-либо менять

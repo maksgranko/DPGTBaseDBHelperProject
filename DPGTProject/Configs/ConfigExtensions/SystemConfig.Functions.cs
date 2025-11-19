@@ -19,10 +19,15 @@ namespace DPGTProject
         internal static void Initialize()
         {
             if (string.IsNullOrEmpty(databaseName)) throw new NullReferenceException("Не задано имя SystemConfig.databaseName!");
-            List<string> tablesTemp = Database.GetTables().ToList();
-            List<string> TempDelete = new List<string>();
+            List<string> tablesTemp; List<string> TempDelete = new List<string>();
             TempDelete.AddRange(removeFromTableWhenStart);
-            if (tableAutodetect) TempDelete.AddRange(removeFromTableWhenAutodetect);
+            if (tableAutodetect)
+            {
+                tablesTemp = Database.GetTables().ToList();
+                TempDelete.AddRange(removeFromTableWhenAutodetect);
+            }
+            else tablesTemp = SystemConfig.tables.ToList();
+
             tablesTemp.RemoveAll(x => TempDelete.Contains(x));
             tables = tablesTemp.Distinct().ToArray();
         }

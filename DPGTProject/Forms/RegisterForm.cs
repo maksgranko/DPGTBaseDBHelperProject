@@ -11,8 +11,8 @@ namespace DPGTProject
         {
             InitializeComponent();
             this.roles_cb.Items.AddRange(SystemConfig.roles);
-            if(!SystemConfig.addRolesWhenRegistering) { roles_cb.Visible = false; roles_label.Visible = false; }
-            roles_cb.SelectedIndex = roles_cb.Items.Count-1; // выбор самой мелкой(последней) роли по умолчанию 
+            if (!SystemConfig.addRolesWhenRegistering) { roles_cb.Visible = false; roles_label.Visible = false; }
+            roles_cb.SelectedIndex = roles_cb.Items.Count - 1; // выбор самой мелкой(последней) роли по умолчанию 
         }
 
         private void register_btn_Click(object sender, EventArgs e)
@@ -42,13 +42,13 @@ namespace DPGTProject
             }
             if (Auth.RegisterUser(login_tb.Text, password_tb.Text, roles_cb.Text))
             {
-                UserConfig.userLogin = login_tb.Text;
-                UserConfig.userRole = Auth.GetUserStatus(login_tb.Text);
+                UserConfig.Login(login_tb.Text);
                 MessageBox.Show("Успешная регистрация!", "Успешно!", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                MainForm mf = new MainForm();
+
+                SystemConfig.mainForm = new MainForm();
                 this.Hide();
-                mf.Location = this.Location;
-                mf.ShowDialog();
+                SystemConfig.mainForm.Location = this.Location;
+                SystemConfig.mainForm.ShowDialog();
                 this.Show();
             }
             else

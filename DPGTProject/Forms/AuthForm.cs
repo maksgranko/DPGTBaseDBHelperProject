@@ -1,5 +1,6 @@
 ﻿using DPGTProject.Forms;
 using System;
+using System.Data;
 using System.Windows.Forms;
 
 namespace DPGTProject
@@ -57,12 +58,13 @@ namespace DPGTProject
                 MessageBox.Show("Неверный логин или пароль!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            UserConfig.userLogin = login_tb.Text;
-            UserConfig.userRole = Auth.GetUserStatus(login_tb.Text);
-            MainForm mf = new MainForm();
+
+            UserConfig.Login(login_tb.Text);
+
+            SystemConfig.mainForm = new MainForm();
             this.Hide();
-            mf.Location = this.Location;
-            if (mf.ShowDialog() != DialogResult.Retry) { Functions.Exit(); }
+            SystemConfig.mainForm.Location = this.Location;
+            if (SystemConfig.mainForm.ShowDialog() != DialogResult.Retry) { Functions.Exit(); }
             if (!this.IsDisposed) this.Show();
         }
 

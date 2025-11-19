@@ -66,6 +66,8 @@ namespace DPGTProject.Forms
             this.Text = _isEditMode ? $"Редактирование: {translatedTableName}" : $"Добавление: {translatedTableName}";
             this.StartPosition = FormStartPosition.CenterScreen;
             this.DialogResult = DialogResult.Abort;
+            this.MaximizeBox = false;
+
 
             try
             {
@@ -145,7 +147,7 @@ namespace DPGTProject.Forms
         private Control CreateInputControl(string columnName, object type)
         {
             // Для bool полей возвращаем обычный CheckBox
-            if (type == typeof(bool))
+            if ((Type)type == typeof(bool))
                 return new CheckBox { Width = 150 };
 
             // Создаем основной контрол ввода
@@ -158,6 +160,14 @@ namespace DPGTProject.Forms
                 {
                     Minimum = int.MinValue,
                     Maximum = int.MaxValue,
+                    DecimalPlaces = 0,
+                    Width = 150
+                };
+            else if (type == typeof(byte))
+                inputControl = new NumericUpDown
+                {
+                    Minimum = byte.MinValue,
+                    Maximum = byte.MaxValue,
                     DecimalPlaces = 0,
                     Width = 150
                 };

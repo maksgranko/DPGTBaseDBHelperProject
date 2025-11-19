@@ -87,8 +87,15 @@ namespace DPGTProject
 
                 if (radioNormalTable.Checked)
                 {
-                    string tableName = SystemConfig.UntranslateComboBox(reportTypeComboBox.SelectedItem?.ToString());
-                    reportData = Database.GetTableData(tableName);
+                    string tableName = reportTypeComboBox.SelectedItem?.ToString();
+
+                    try
+                    {
+                        this.dataGridView1.DataSource = reportData = _translatedData;
+                    }
+                    catch {
+                        // TODO: rep[]; 
+                    }
                     reportData = Database.Translate(reportData, tableName);
 
                     if (reportData == null)

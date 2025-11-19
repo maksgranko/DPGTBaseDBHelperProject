@@ -14,10 +14,12 @@ namespace DPGTProject
         {
             public static string UsersTableName = "Users";                                                                     // Если вам необходимо изменить таблицу "Users", измените здесь
             public static Dictionary<string, string> UsersTableColumnsNames = new Dictionary<string, string> {                 // Если вам необходимо изменить названия колонок в таблице "Users", измените здесь
-                { "UserID","UserID"},                                                                                          // Менять необходимо ВТОРОЕ значение, именно оно влияет на название таблицы, а первое используется в коде.
+                { "UserID","UserID"},                                                                                          // Менять необходимо ВТОРОЕ значение, именно оно влияет на название таблицы в БД, а первое используется в коде.
                 { "Login","Login"},
                 { "Password","Password"},
                 { "Role","Role"},
+                //   ^      ^
+                // Ключ | Как названо в БД
             };
             public static DataTable GetAll()
             {
@@ -103,6 +105,55 @@ namespace DPGTProject
                     return cmd.ExecuteNonQuery() > 0;
                 }
             }
+            public static bool Update(int userId, string login, string password)
+            {
+                using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
+                {
+                    string query = $"UPDATE {UsersTableName} SET " +
+                                   $"{UsersTableColumnsNames["Login"]} = @Login, " +
+                                   $"{UsersTableColumnsNames["Password"]} = @Password " +
+                                   $"WHERE {UsersTableColumnsNames["UserID"]} = @UserID";
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@UserID", userId);
+                    cmd.Parameters.AddWithValue("@Login", login);
+                    cmd.Parameters.AddWithValue("@Password", password);
+
+                    conn.Open();
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+            public static bool Update(string login, string password)
+            {
+                using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
+                {
+                    string query = $"UPDATE {UsersTableName} SET " +
+                                   $"{UsersTableColumnsNames["Login"]} = @Login, " +
+                                   $"{UsersTableColumnsNames["Password"]} = @Password " +
+                                   $"WHERE {UsersTableColumnsNames["Login"]} = @Login";
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@Login", login);
+                    cmd.Parameters.AddWithValue("@Password", password);
+
+                    conn.Open();
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
+            public static bool Update(string login, bool needGuestNotify)
+            {
+                using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
+                {
+                    string query = $"UPDATE {UsersTableName} SET " +
+                                   $"{UsersTableColumnsNames["Login"]} = @Login, " +
+                                   $"{UsersTableColumnsNames["NeedGuestNotify"]} = @NeedGuestNotify " +
+                                   $"WHERE {UsersTableColumnsNames["Login"]} = @Login";
+                    SqlCommand cmd = new SqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@Login", login);
+                    cmd.Parameters.AddWithValue("@NeedGuestNotify", needGuestNotify);
+
+                    conn.Open();
+                    return cmd.ExecuteNonQuery() > 0;
+                }
+            }
             public static bool Delete(int userId)
             {
                 using (SqlConnection conn = new SqlConnection(SystemConfig.connectionString))
@@ -116,6 +167,8 @@ namespace DPGTProject
                 }
             }
         }
+
+
         public static string ConnectionStringBuilder(string databaseName, bool auto = true)
         {
             if (auto) // флаг автоматического определения строки подключения
@@ -135,9 +188,9 @@ namespace DPGTProject
         public static string ParseFirstSQLServer(string databaseName)
         {
             string[] defaultServers = {
+                ".\\SQLEXPRESS",
                 "localhost",
                 ".",
-                ".\\SQLEXPRESS",
                 ".\\SQLSERVER01",
                 Environment.MachineName,
                 $"{Environment.MachineName}\\SQLEXPRESS",

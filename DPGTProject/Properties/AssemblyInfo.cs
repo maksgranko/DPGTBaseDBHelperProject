@@ -22,7 +22,7 @@ using System.Runtime.InteropServices;
 // Следующий GUID служит для идентификации библиотеки типов, если этот проект будет видимым для COM
 [assembly: Guid("45a23ed4-3255-43e8-8302-12f7e5d50ea7")]
 
-[assembly: AssemblyVersion("1.2025.126.318")]
-[assembly: AssemblyFileVersion("1.2025.126.318")]
+[assembly: AssemblyVersion("1.2025.323.323")]
+[assembly: AssemblyFileVersion("1.2025.323.323")]
 
-[assembly: AssemblyInformationalVersion("0.2025.126.209")]
+[assembly: AssemblyInformationalVersion("0.2025.323.214")]
