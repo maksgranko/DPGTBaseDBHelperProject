@@ -38,7 +38,7 @@
 
    1. Откройте Visual Studio 2022.
    2. В главном меню выберите **Git** -> **Клонировать репозиторий**.
-   3. В поле **URL-адрес репозитория** вставьте ссылку на репозиторий (https://github.com/your-repo/UniversalBaseDBProject.git).
+   3. В поле **URL-адрес репозитория** вставьте ссылку на репозиторий (https://github.com/maksgranko/DPGTBaseDBHelperProject).
    4. Укажите локальный путь, куда хотите клонировать репозиторий.
    5. Нажмите кнопку **Клонировать**.
 
@@ -55,8 +55,8 @@
 1. **Клонирование репозитория**
 
 ```bash
-git clone https://github.com/your-repo/UniversalBaseDBProject.git
-cd UniversalBaseDBProject
+git clone https://github.com/maksgranko/DPGTBaseDBHelperProject
+cd DPGTBaseDBHelperProject
 ```
 
 2. **Восстановление зависимостей**
