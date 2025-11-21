@@ -29,7 +29,8 @@ namespace DPGTProject
             if (!Test.Initialized || UserConfig.userRole != "Администратор") radioButtonExportTables.Visible = false;
         }
 
-        private void DataTimePickerEnable(bool enable) {
+        private void DataTimePickerEnable(bool enable)
+        {
             to_lb.Visible = enable;
             from_lb.Visible = enable;
             start_dtp.Visible = enable;
@@ -88,24 +89,24 @@ namespace DPGTProject
 
                 if (radioNormalTable.Checked)
                 {
-                    string tableName = reportTypeComboBox.SelectedItem?.ToString();
-
+                    string tableName = SystemConfig.UntranslateComboBox(reportTypeComboBox.SelectedItem?.ToString());
+                    reportData = MSSQL.GetTableData(tableName);
                     try
                     {
-                        this.dataGridView1.DataSource = reportData = _translatedData;
+                        this.dataGridView1.DataSource = _translatedData = reportData;
                     }
-                    catch {
-                        // TODO: rep[]; 
+                    catch
+                    {
+                        //rep[]; 
                     }
-                    reportData = MSSQL.Translate(reportData, tableName);
-
                     if (reportData == null)
                     {
                         MessageBox.Show("Не удалось получить данные таблицы!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
-                    _translatedData = reportData;
-                    dataGridView1.DataSource = _translatedData;
+                    reportData = MSSQL.Translate(reportData, tableName);
+
+                    dataGridView1.DataSource = _translatedData = reportData;
                 }
                 else
                 {
@@ -117,8 +118,8 @@ namespace DPGTProject
                             reportData = MSSQL.GetDataTableFromSQL("Здесь_Вы_Задаёте_SQL-запрос, ну это к примеру"); // Получение данных
                             // Примечание: Для дат с-по в SQL используйте переменные dtp(DateTimePicker, intellisense подскажет при написании)
                             reportData = MSSQL.Translate(reportData, "Пример 1");                                    // Как переводить колоны у таблиц
-                            throw new NotImplementedException("Задайте корректный алгоритм репорта!");                  // Стереть, после того, как функция будет реализована корректно
-                            break;                                                                                      // Ниже можно указать выполнение кода, при выборе любого из отчётов, работает также по названию.
+                            throw new NotImplementedException("Задайте корректный алгоритм репорта!");               // Стереть, после того, как функция будет реализована корректно
+                            break;                                                                                   // Ниже можно указать выполнение кода, при выборе любого из отчётов, работает также по названию.
                         case "Отчёт 2":
                             // ...
                             throw new NotImplementedException("Задайте корректный алгоритм репорта!");
@@ -132,8 +133,7 @@ namespace DPGTProject
                         MessageBox.Show("Нет данных для отображения!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
-                    _translatedData = reportData;
-                    dataGridView1.DataSource = _translatedData;
+                    dataGridView1.DataSource = _translatedData = reportData;
 #pragma warning restore CS0162
                 }
             }
