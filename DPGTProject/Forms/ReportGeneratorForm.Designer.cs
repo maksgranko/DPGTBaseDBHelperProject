@@ -1,4 +1,4 @@
-namespace DPGTProject
+﻿namespace DPGTProject
 {
     partial class ReportGeneratorForm
     {

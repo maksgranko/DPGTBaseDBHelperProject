@@ -2,6 +2,7 @@
 using DPGTProject.Forms;
 using System;
 using System.Windows.Forms;
+using Scraps.Security;
 
 namespace DPGTProject
 {
@@ -25,7 +26,19 @@ namespace DPGTProject
                 MessageBox.Show("Заполните все поля!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            if (Auth.CheckIsUserValid(login_tb.Text, password_tb.Text))
+            bool userExists;
+            try
+            {
+                userExists = UserSession.CheckIsUserExists(login_tb.Text);
+            }
+            catch (Exception ex)
+            {
+                SystemConfig.lastError = ex.Message;
+                MessageBox.Show("Не удалось проверить логин. Обратитесь к администратору.", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (userExists)
             {
                 MessageBox.Show("Пользователь уже зарегистрирован!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -35,20 +48,38 @@ namespace DPGTProject
                 MessageBox.Show("Пароли не совпадают!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            if (!RoleManager.IsRoleExists(roles_cb.Text))
+            if (Array.IndexOf(SystemConfig.roles, roles_cb.Text) < 0)
             {
                 MessageBox.Show("Указанная роль не существует!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            if (Auth.RegisterUser(login_tb.Text, password_tb.Text, roles_cb.Text))
+            bool registered;
+            try
+            {
+                if (!UserSession.Utilities.IsPasswordValid(password_tb.Text))
+                {
+                    MessageBox.Show("Пароль не подходит по условиям!\nУсловия:\nСодержится хотя-бы одна заглавная латинская буква\nСодержится спец. символ\nКоличество символов не менее 8-ми.", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                UserSession.Register(login_tb.Text, password_tb.Text, roles_cb.Text, loginAfterRegistration: false);
+                registered = true;
+            }
+            catch (Exception ex)
+            {
+                SystemConfig.lastError = ex.Message;
+                registered = false;
+            }
+
+            if (registered)
             {
                 UserConfig.Login(login_tb.Text);
                 MessageBox.Show("Успешная регистрация!", "Успешно!", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                SystemConfig.mainForm = new MainForm();
+                var mainForm = new MainForm();
                 this.Hide();
-                SystemConfig.mainForm.Location = this.Location;
-                SystemConfig.mainForm.ShowDialog();
+                mainForm.Location = this.Location;
+                mainForm.ShowDialog();
                 this.Show();
             }
             else
@@ -92,7 +123,7 @@ namespace DPGTProject
 
         private void RegisterForm_LocationChanged(object sender, EventArgs e)
         {
-            SystemConfig.LastLocation = this.Location;
+            // Reserved for future UI state persistence.
         }
     }
 }

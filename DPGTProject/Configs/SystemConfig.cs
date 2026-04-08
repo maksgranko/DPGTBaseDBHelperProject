@@ -1,5 +1,9 @@
 ﻿using DPGTProject.Configs;
-using DPGTProject.Databases;
+using Scraps.Configs;
+using Scraps.Databases.Utilities;
+using Scraps.Security;
+using MSSQL = Scraps.Databases.MSSQL;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -33,6 +37,11 @@ namespace DPGTProject
         #region +++  RegisterForm функции +++
         public static bool addRolesWhenRegistering = false;                                                            // Добавить выбор роли при регистрации
         #endregion +++ RegisterForm функции +++
+        #region +++ Auth / схема БД +++
+        public static bool authHashPasswords = true;                                                                   // Хэшировать пароли при регистрации/авторизации
+        public static DatabaseGenerationMode databaseGenerationMode = DatabaseGenerationMode.Simple;                   // Режим генерации БД: None/Simple/Standard/Full
+        #endregion +++ Auth / схема БД +++
+
 
         #endregion --- Дополнительные функции ---
 
@@ -41,58 +50,26 @@ namespace DPGTProject
                                                                                                                        // Роли добавляются в список с начала в конец. По умолчанию при отключённом выборе, выдаётся последняя роль.
 
         #region +++ Права, индивидуальные к каждой РОЛИ ПО УМОЛЧАНИЮ +++
-        public static Dictionary<string, TablePermission> DefaultRolePermissions = new Dictionary<string, TablePermission>()
+        public static Dictionary<string, PermissionFlags> DefaultRolePermissions = new Dictionary<string, PermissionFlags>()
         {
-            ["default"] = new TablePermission                                                                          // default - права для ВСЕХ
-            {
-                CanRead = false,
-                CanWrite = false,
-                CanDelete = false,
-                CanExport = false,
-                CanImport = false
-            },
-            ["Администратор"] = new TablePermission                                                                    // Администратор - права для Администратора
-            {
-                CanRead = true,
-                CanWrite = true,
-                CanDelete = true,
-                CanExport = true,
-                CanImport = true
-            },
-            ["Менеджер"] = new TablePermission                                                                         // Менеджер - права для Менеджера
-            {
-                CanRead = true,
-                CanWrite = true,
-                CanDelete = true,
-                CanExport = false,
-                CanImport = false
-            }
+            ["default"] = PermissionFlags.None,                                                                        // default - права для ВСЕХ
+            ["Администратор"] = PermissionFlags.All,
+            ["Менеджер"] = PermissionFlags.Read | PermissionFlags.Write | PermissionFlags.Delete
         };
         #endregion +++ Права, индивидуальные к каждой РОЛИ ПО УМОЛЧАНИЮ +++
-                                                                                                                       // Порядок прав: <-эти^ права важнее, чем те, что ниже, они работают глобально ко всем таблицам
+        // Порядок прав: <-эти^ права важнее, чем те, что ниже, они работают глобально ко всем таблицам
         #region +++ Права, индивидуальные ПО РОЛЯМ к каждой ТАБЛИЦЕ +++
         // Можно добавить другие таблицы по аналогии
         public static Dictionary<string, List<TablePermission>> RolePermissions = new Dictionary<string, List<TablePermission>>()
         {
             ["Администратор"] = new List<TablePermission>
             {                                                                                                           /* ^РОЛЬ^, которой назначаются права ниже.*/
-                new TablePermission {
-                    TableName = MSSQL.Users.UsersTableName,                                                          // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
-                                                                                                                        // В данном случае, это касается именно таблицы USERS, название которой берётся из переменной
-                    CanRead   =  true,                                                                                  // <--- Может ли просматривать?
-                    CanWrite  =  true,                                                                                  // <--- Может ли записывать/редактировать?
-                    CanDelete =  true,                                                                                  // <--- Может ли удалять?
-                    CanExport =  true,                                                                                  // <--- Может ли экспортировать?
-                    CanImport =  true                                                                                   // <--- Может ли импортировать?
-                },                                                                                                   
-                new TablePermission {
-                    TableName =  "Здесь_Название_Таблицы",                                                              // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
-                    CanRead   =  true,
-                    CanWrite  =  true,
-                    CanDelete =  true,
-                    CanExport =  true,
-                    CanImport =  true 
-                }, // аналогично далее
+                new TablePermission(
+                    ScrapsConfig.UsersTableName,                                                                       // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
+                    PermissionFlags.All),
+                new TablePermission(
+                    "Здесь_Название_Таблицы",                                                                           // <--- НАЗВАНИЕ ТАБЛИЦЫ, всё что ниже - касается именно ЭТОЙ таблицы.
+                    PermissionFlags.All),
             },
         };
         #endregion +++ Права, индивидуальные ПО РОЛЯМ к каждой ТАБЛИЦЕ +++
@@ -118,40 +95,42 @@ namespace DPGTProject
                                                                                                                         // Icon = new Icon("C:\\path\\to\\icon.ico");
         #endregion --- Цветовая тема и иконка ---
 
-        #region --- Переводы таблиц и других элементов ---
-        public static Dictionary<string, Dictionary<string, string>> ColumnTranslations = new Dictionary<string, Dictionary<string, string>>()
+        #region --- Переводы таблиц ---
+        public static Dictionary<string, string> Translations = new Dictionary<string, string>()
         {
-            ["Owners"] = new Dictionary<string, string>()
-            {
-                ["Sample"] = "Пример_поля_таблицы",
-                ["Sample1"] = "Пример_поля_таблицы1",
-                ["Sample2"] = "Пример_поля_таблицы2",
-                ["Sample3"] = "Пример_поля_таблицы3"
-            },
-            ["Users"] = new Dictionary<string, string>()
-            {
-                ["UserID"] = "Идентификатор",
-                ["Login"] = "Логин",
-                ["Password"] = "Пароль",
-                ["Role"] = "Роль"
-            },
-        };
-        public static Dictionary<string, string> TableTranslations = new Dictionary<string, string>()
-        {
+            // Переводы таблиц:
             ["Sample"] = "Пример_названий_в_combobox1",
             ["Sample1"] = "Пример_названий_в_combobox2",
             ["Sample2"] = "Пример_названий_в_combobox3",
             ["Sample3"] = "Пример_названий_в_combobox4",
-            [MSSQL.Users.UsersTableName] = "Пользователи" // Строку не трогать, она нужна для перевода
+            [ScrapsConfig.UsersTableName] = "Пользователи",
+            // Переводы колонок (глобально по имени колонки):
+            ["UserID"] = "Идентификатор",
+            ["Login"] = "Логин",
+            ["Password"] = "Пароль",
+            ["Role"] = "Роль"
         };
-        #endregion --- Переводы таблиц и других элементов ---
+        #endregion --- Переводы таблиц ---
+
+        #region --- FK отображение в Add/Edit ---
+        // Позволяет вручную указать, какую колонку показывать в ComboBox для конкретного FK.
+        // Ключ: "<ТекущаяТаблица>.<FKКолонка>", значение: "<КолонкаДляОтображенияИзСвязаннойТаблицы>".
+        // Пример:
+        // ["Users.Role"] = "RoleName"
+        public static Dictionary<string, string> ForeignKeyDisplayColumnOverrides = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        #endregion --- FK отображение в Add/Edit ---
         #endregion --- UserSpace ---
         #region --- DevSpace ---
         // Системные настройки, здесь нет необходимости что-либо менять
-        public static MainForm mainForm;
         public static string lastError = "";
-        public static Point LastLocation = new Point(400, 300); // от этого вообще есть ли смысл?
         // Системные настройки, здесь нет необходимости что-либо менять
         #endregion --- DevSpace ---
     }
 }
+
+
+
+
+
+
+

@@ -1,36 +1,28 @@
-﻿using DPGTProject.Databases;
+﻿using Scraps.Security;
 using System.Data;
 
 namespace DPGTProject
 {
     internal static class UserConfig
     {
-        public static int userId = -1;
-        public static string userLogin = "";
-        public static string userRole = "";
-        
-        public static DataRow userData;
+        public static int userId => UserSession.UserId;
+        public static string userLogin => UserSession.UserLogin;
+        public static string userRole => UserSession.UserRole;
+        public static DataRow userData => UserSession.UserData;
 
         public static void ReparseConfig()
         {
-            string tempLogin = userLogin;
-            Logout();
-            Login(tempLogin);
+            UserSession.Reload();
         }
+
         public static void Login(string login)
         {
-            userLogin = login;
-            userRole = Auth.GetUserStatus(login);
-            userData = MSSQL.Users.GetByLogin(login);
-            userId = (int)userData[0];
+            UserSession.LoginByName(login);
         }
 
         public static void Logout()
         {
-            userId = -1;
-            userLogin = "";
-            userRole = "";
-            userData = null;
+            UserSession.Logout();
         }
     }
 }

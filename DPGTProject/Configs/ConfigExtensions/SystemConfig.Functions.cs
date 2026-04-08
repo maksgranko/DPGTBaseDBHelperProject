@@ -1,36 +1,21 @@
-using DPGTProject.Databases;
+﻿using Scraps.Databases.Utilities;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace DPGTProject
 {
     public static partial class SystemConfig
     {
-        public static string TranslateComboBox(string value)
-        {
-            return TableTranslations.TryGetValue(value, out var translation)
-                ? translation
-                : value;
-        }
-        public static string UntranslateComboBox(string value)
-        {
-            return TableTranslations.FirstOrDefault(x => x.Value == value).Key ?? value;
-        }
         internal static void Initialize()
         {
-            if (string.IsNullOrEmpty(databaseName)) throw new NullReferenceException("Не задано имя SystemConfig.databaseName!");
-            List<string> tablesTemp; List<string> TempDelete = new List<string>();
-            TempDelete.AddRange(removeFromTableWhenStart);
-            if (tableAutodetect)
-            {
-                tablesTemp = MSSQL.GetTables().ToList();
-                TempDelete.AddRange(removeFromTableWhenAutodetect);
-            }
-            else tablesTemp = SystemConfig.tables.ToList();
+            if (string.IsNullOrEmpty(databaseName))
+                throw new NullReferenceException("Не задано имя SystemConfig.databaseName!");
 
-            tablesTemp.RemoveAll(x => TempDelete.Contains(x));
-            tables = tablesTemp.Distinct().ToArray();
+            tables = TableCatalog.InitializeTables(
+                tableAutodetect,
+                SystemConfig.tables,
+                removeFromTableWhenStart,
+                removeFromTableWhenAutodetect,
+                virtualTables);
         }
     }
 }

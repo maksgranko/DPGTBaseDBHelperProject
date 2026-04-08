@@ -1,11 +1,15 @@
-using DPGTProject.Configs;
-using DPGTProject.Databases;
+﻿using DPGTProject.Configs;
+using MSSQL = Scraps.Databases.MSSQL;
 using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
+using PermissionFlags = Scraps.Security.PermissionFlags;
+using ScrapsRoleManager = Scraps.Security.RoleManager;
+using Scraps.Localization;
 
 namespace DPGTProject
 {
@@ -16,6 +20,8 @@ namespace DPGTProject
         private DataTable _originalData;
         private DataTable _filteredData;
         private List<DataGridViewCell> _searchResults = new List<DataGridViewCell>();
+        private readonly Dictionary<string, Dictionary<string, string>> _fkDisplayMap =
+            new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
         private int _currentSearchIndex = -1;
         private bool request = false;
         private string SQLRequest = "";
@@ -35,14 +41,24 @@ namespace DPGTProject
         {
             InitializeComponent();
             dataGridView1.DataError += DataGridView1_DataError;
+            dataGridView1.CellFormatting += DataGridView1_CellFormatting;
+        }
+
+        private PermissionFlags GetCurrentPermissions()
+        {
+            return ScrapsRoleManager.GetEffectivePermissions(UserConfig.userRole, _tableName ?? string.Empty);
+        }
+
+        private bool HasCurrentPermission(PermissionFlags flag)
+        {
+            return (GetCurrentPermissions() & flag) == flag;
         }
 
         private void UpdateButtonsVisibility()
         {
-            string role = UserConfig.userRole;
-            string table = _tableName ?? "";
-            bool write = RoleManager.CheckAccess(role, table, "write");
-            export_btn.Visible = this.request || (SystemConfig.exportRightInTables && RoleManager.CheckAccess(role, table, "export"));
+            var permissions = GetCurrentPermissions();
+            bool write = (permissions & PermissionFlags.Write) != 0;
+            export_btn.Visible = this.request || (SystemConfig.exportRightInTables && (permissions & PermissionFlags.Export) != 0);
             help_btn.Visible = SystemConfig.helpButtonInTables;
             toolStripSeparator2.Visible = help_btn.Visible || export_btn.Visible;
 
@@ -56,7 +72,7 @@ namespace DPGTProject
 
             addrow_btn.Visible = editrow_btn.Visible = !request && SystemConfig.additionalButtonsInTables && write;
             save_btn.Visible = !request && write;
-            removerow_btn.Visible = !request && (write && RoleManager.CheckAccess(role, table, "delete"));
+            removerow_btn.Visible = !request && (write && (permissions & PermissionFlags.Delete) != 0);
         }
 
         private void DataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
@@ -73,6 +89,29 @@ namespace DPGTProject
             {
                 SystemConfig.lastError = "Неизвестная ошибка.";
             }
+        }
+
+        private void DataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0 || e.Value == null || e.Value == DBNull.Value)
+                return;
+
+            var columnName = dataGridView1.Columns[e.ColumnIndex]?.Name;
+            if (string.IsNullOrWhiteSpace(columnName))
+                return;
+
+            if (!_fkDisplayMap.TryGetValue(columnName, out var valueMap))
+                return;
+
+            var raw = Convert.ToString(e.Value, CultureInfo.InvariantCulture);
+            if (string.IsNullOrWhiteSpace(raw))
+                return;
+
+            if (!valueMap.TryGetValue(raw, out var formatted))
+                return;
+
+            e.Value = formatted;
+            e.FormattingApplied = true;
         }
 
         public UniversalTableViewerForm(string tableName) : this()
@@ -94,11 +133,11 @@ namespace DPGTProject
             {
                 if (request)
                 {
-                    MSSQL.GetDataTableFromSQL(SQLRequest, out DataTable dt);
-                    _originalData = dt;
+                    _originalData = MSSQL.GetDataTableFromSQL(SQLRequest);
                 }
-                else _originalData = MSSQL.GetAll(TableName);
-                dataGridView1.DataSource = MSSQL.Translate(_originalData, TableName);
+                else _originalData = MSSQL.GetTableData(TableName);
+                BuildForeignKeyDisplayMap();
+                dataGridView1.DataSource = TranslateForView(_originalData);
                 statusLabel.Text = $"Загружено записей: {_originalData.Rows.Count}";
             }
             catch
@@ -110,7 +149,7 @@ namespace DPGTProject
 
         private void save_btn_Click(object sender, EventArgs e)
         {
-            if (!RoleManager.CheckAccess(UserConfig.userRole, _tableName, "write"))
+            if (!HasCurrentPermission(PermissionFlags.Write))
             {
                 MessageBox.Show("У вас нет прав на редактирование записей", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -119,17 +158,17 @@ namespace DPGTProject
             try
             {
                 var changedData = (DataTable)dataGridView1.DataSource;
-                var untranslated = MSSQL.Untranslate(changedData, TableName);
+                var untranslated = TranslationManager.Untranslate(changedData, TableName);
 
                 // Проверяем, есть ли удаленные строки
                 if (untranslated.GetChanges(DataRowState.Deleted) != null &&
-                    !RoleManager.CheckAccess(UserConfig.userRole, _tableName, "delete"))
+                    !HasCurrentPermission(PermissionFlags.Delete))
                 {
                     MessageBox.Show("У вас нет прав на удаление записей", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                MSSQL.BulkUpdate(TableName, untranslated);
+                MSSQL.ApplyTableChanges(TableName, untranslated);
             }
             catch
             {
@@ -174,7 +213,7 @@ namespace DPGTProject
             string text = "Вы можете использовать кнопки на верхней панели.\nДополнительные подсказки:\n";
             if (SystemConfig.exportRightInTables) helpList.Add("Для экспорта нажмите \"Экспорт\".");
             if (!SystemConfig.additionalButtonsInTables) helpList.Add("Редактируйте напрямую в полях.");
-            if (!RoleManager.CheckAccess(UserConfig.userRole, TableName, "delete")) helpList.Add("Для удаления выделите строки и нажмите \"Удалить строку\".");
+            if (!HasCurrentPermission(PermissionFlags.Delete)) helpList.Add("Для удаления выделите строки и нажмите \"Удалить строку\".");
             if (SystemConfig.enableFilterInTables) helpList.Add("Для фильтрации данных используйте текстовое поле \"Фильтр\" и кнопку \"Enter\".");
             if (SystemConfig.enableSearchInTables) helpList.Add("Для поиска введите текст в поле \"Найти\" и используйте кнопки ↑↓.");
             if (SystemConfig.moreExitButtons) helpList.Add("Для того, чтобы закрыть форму, вы также можете использовать кнопку \"Выход\".");
@@ -286,7 +325,7 @@ namespace DPGTProject
             }
             catch { MessageBox.Show("Не удалось применить фильтр!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
 
-            dataGridView1.DataSource = MSSQL.Translate(_filteredData, TableName);
+            dataGridView1.DataSource = TranslateForView(_filteredData);
             statusLabel.Text = $"Отфильтровано записей: {_filteredData.Rows.Count}";
         }
 
@@ -306,6 +345,99 @@ namespace DPGTProject
             return columns;
         }
 
+        private string GetTranslatedColumnName(string originalColumnName)
+        {
+            return TranslationManager.TranslateColumnName(TableName, originalColumnName);
+        }
+
+        private DataTable TranslateForView(DataTable source)
+        {
+            if (source == null)
+                return null;
+
+            // Translate(...) работает in-place, поэтому для UI используем копию.
+            var copy = source.Copy();
+            return TranslationManager.Translate(copy, TableName);
+        }
+
+        private void BuildForeignKeyDisplayMap()
+        {
+            _fkDisplayMap.Clear();
+
+            if (string.IsNullOrWhiteSpace(TableName) || request)
+                return;
+
+            try
+            {
+                var foreignKeys = MSSQL.GetForeignKeys(TableName, null, null);
+                foreach (var fk in foreignKeys)
+                {
+                    if (fk == null || string.IsNullOrWhiteSpace(fk.Column))
+                        continue;
+
+                    string overrideKey = $"{TableName}.{fk.Column}";
+                    string displayColumn = null;
+                    if (SystemConfig.ForeignKeyDisplayColumnOverrides.TryGetValue(overrideKey, out var configuredDisplay) &&
+                        !string.IsNullOrWhiteSpace(configuredDisplay))
+                    {
+                        displayColumn = configuredDisplay;
+                    }
+
+                    var lookup = MSSQL.GetForeignKeyLookup(TableName, fk.Column, displayColumn, null, null, null);
+                    if (lookup == null || !lookup.Columns.Contains("Value"))
+                        continue;
+
+                    var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (DataRow row in lookup.Rows)
+                    {
+                        if (row["Value"] == null || row["Value"] == DBNull.Value)
+                            continue;
+
+                        var valueText = Convert.ToString(row["Value"], CultureInfo.InvariantCulture);
+                        if (string.IsNullOrWhiteSpace(valueText))
+                            continue;
+
+                        var displayText = lookup.Columns.Contains("Display") && row["Display"] != null && row["Display"] != DBNull.Value
+                            ? row["Display"].ToString()
+                            : valueText;
+
+                        map[valueText] = $"{displayText}[{valueText}]";
+                    }
+
+                    if (map.Count == 0)
+                        continue;
+
+                    _fkDisplayMap[fk.Column] = map;
+                    var translatedColumn = TranslationManager.TranslateColumnName(TableName, fk.Column);
+                    _fkDisplayMap[translatedColumn] = map;
+                }
+            }
+            catch
+            {
+                // Для виртуальных/нестандартных таблиц FK-метаданные могут быть недоступны.
+            }
+        }
+
+        private object GetCellValue(DataGridViewRow row, string originalColumnName)
+        {
+            var translatedName = GetTranslatedColumnName(originalColumnName);
+
+            if (row.DataGridView != null && row.DataGridView.Columns.Contains(originalColumnName))
+                return row.Cells[originalColumnName].Value;
+            if (row.DataGridView != null && row.DataGridView.Columns.Contains(translatedName))
+                return row.Cells[translatedName].Value;
+
+            return null;
+        }
+
+        private static bool AreSameKey(object left, object right)
+        {
+            bool leftNull = left == null || left == DBNull.Value;
+            bool rightNull = right == null || right == DBNull.Value;
+            if (leftNull || rightNull) return leftNull == rightNull;
+            return string.Equals(left.ToString(), right.ToString(), StringComparison.Ordinal);
+        }
+
         private void addrow_btn_Click(object sender, EventArgs e)
         {
             var columnDefinitions = GetTableColumnDefinitions();
@@ -315,18 +447,23 @@ namespace DPGTProject
                 if (form.IsDisposed) throw new Exception("Произошла критическая ошибка формы AddEdit.");
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    if (form.GeneratedInsertQuery == null) throw new NullReferenceException("Ошибка формы. Вероятно, введены некорректные значения.");
-                    try
+                    if (form.SubmittedValues == null) throw new NullReferenceException("Ошибка формы. Вероятно, введены некорректные значения.");
+
+                    var tableData = MSSQL.GetTableData(TableName);
+                    var newRow = tableData.NewRow();
+                    foreach (var pair in form.SubmittedValues)
                     {
-                        string query = form.GeneratedInsertQuery.Replace("%TABLENAME%", TableName);
-                        MSSQL.ExecuteNonQuery(query);
-                        LoadData();
-                        statusLabel.Text = "Запись успешно добавлена";
+                        if (!tableData.Columns.Contains(pair.Key)) continue;
+                        newRow[pair.Key] = pair.Value ?? DBNull.Value;
                     }
-                    catch
-                    {
-                        throw;
-                    }
+                    tableData.Rows.Add(newRow);
+
+                    var changes = tableData.GetChanges();
+                    if (changes == null) throw new Exception("Изменения для добавления не найдены.");
+
+                    MSSQL.ApplyTableChanges(TableName, changes);
+                    LoadData();
+                    statusLabel.Text = "Запись успешно добавлена";
                 }
             }
             catch (Exception ex)
@@ -368,57 +505,34 @@ namespace DPGTProject
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    try
-                    {
-                        string keyColumn = _originalData.PrimaryKey.Length > 0
-                            ? _originalData.PrimaryKey[0].ColumnName
-                            : _originalData.Columns[0].ColumnName;
-                        string notTranslated = keyColumn;
+                    if (form.SubmittedValues == null) throw new NullReferenceException("Ошибка формы. Вероятно, введены некорректные значения.");
 
-                        // Получаем оригинальное имя колонки из переведенного
-                        if (SystemConfig.ColumnTranslations.TryGetValue(TableName, out var translations))
-                        {
-                            var originalName = translations.FirstOrDefault(x => x.Value == keyColumn).Key;
-                            if (originalName != null)
-                            {
-                                keyColumn = originalName;
-                            }
-                        }
-                        object keyValue = null;
-                        try
-                        {
-                            keyValue = selectedRow.Cells[keyColumn].Value;
-                        }
-                        catch
-                        {
-                            keyValue = selectedRow.Cells[notTranslated].Value;
-                        }
-                        string formattedValue;
-                        if (keyValue is string s)
-                        {
-                            formattedValue = $"'{s.Replace("'", "''")}'"; // Экранирование одинарных кавычек
-                        }
-                        else if (keyValue is DateTime dt)
-                        {
-                            formattedValue = $"'{dt:yyyy-MM-ddTHH:mm:ss}'"; // Формат ISO 8601 для SQL Server
-                        }
-                        else
-                        {
-                            formattedValue = keyValue.ToString(); // Другие типы
-                        }
-                        
-                        string query = form.GeneratedUpdateQuery
-                            .Replace("%TABLENAME%", TableName)
-                            .Replace("%WHERE%", $"{keyColumn} = {formattedValue}");
+                    var tableData = MSSQL.GetTableData(TableName);
 
-                        MSSQL.ExecuteNonQuery(query);
-                        LoadData();
-                        statusLabel.Text = "Запись успешно изменена";
-                    }
-                    catch
+                    string keyColumn = tableData.PrimaryKey.Length > 0
+                        ? tableData.PrimaryKey[0].ColumnName
+                        : tableData.Columns[0].ColumnName;
+
+                    object keyValue = GetCellValue(selectedRow, keyColumn);
+
+                    var targetRow = tableData.AsEnumerable()
+                        .FirstOrDefault(r => AreSameKey(r[keyColumn], keyValue));
+
+                    if (targetRow == null)
+                        throw new Exception("Не удалось найти строку для обновления.");
+
+                    foreach (var pair in form.SubmittedValues)
                     {
-                        throw;
+                        if (!tableData.Columns.Contains(pair.Key)) continue;
+                        targetRow[pair.Key] = pair.Value ?? DBNull.Value;
                     }
+
+                    var changes = tableData.GetChanges();
+                    if (changes == null) return;
+
+                    MSSQL.ApplyTableChanges(TableName, changes);
+                    LoadData();
+                    statusLabel.Text = "Запись успешно изменена";
                 }
                 else if (form.DialogResult == DialogResult.Cancel)
                 {
@@ -452,7 +566,7 @@ namespace DPGTProject
 
                 // Установить выбранную таблицу в комбобокс
                 if(!reportForm.reportTypeComboBox.Items.Contains(_tableName)) reportForm.reportTypeComboBox.Items.Add(_tableName);
-                reportForm.reportTypeComboBox.SelectedItem = SystemConfig.TranslateComboBox(_tableName);
+                reportForm.reportTypeComboBox.SelectedItem = TranslationManager.Translate(_tableName);
 
                 // Установить данные для экспорта
                 reportForm._translatedData = (DataTable)dataGridView1.DataSource;
@@ -476,3 +590,7 @@ namespace DPGTProject
         }
     }
 }
+
+
+
+

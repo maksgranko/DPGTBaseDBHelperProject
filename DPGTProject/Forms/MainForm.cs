@@ -1,18 +1,20 @@
 ﻿using DPGTProject.Configs;
-using DPGTProject.Databases;
 using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Windows.Forms;
+using Scraps.Localization;
+using PermissionFlags = Scraps.Security.PermissionFlags;
+using ScrapsRoleManager = Scraps.Security.RoleManager;
 
 namespace DPGTProject
 {
     public partial class MainForm : BaseForm
     {
         private string[] tables;
-        private Dictionary<Type, Form> openForms = new Dictionary<Type, Form>();
+        private readonly Dictionary<Type, Form> openForms = new Dictionary<Type, Form>();
 
         private void ShowOrActivateForm<T>(params object[] args) where T : Form
         {
@@ -41,47 +43,35 @@ namespace DPGTProject
             hello_lb.Text = "Здравствуй, " + UserConfig.userLogin + "!";
             role_lb.Text = "Ваша роль: " + UserConfig.userRole;
 
-            // Получаем список таблиц
-            string[] allTables = SystemConfig.tableAutodetect ? MSSQL.GetTables(false) : SystemConfig.tables;
+            // Базовые таблицы уже подготовлены в SystemConfig.Initialize().
+            tables = (SystemConfig.tables ?? Array.Empty<string>())
+                .Concat(SystemConfig.virtualTables ?? Array.Empty<string>())
+                .Distinct()
+                .ToArray();
 
-            // Парс виртуальных таблиц
-            if (SystemConfig.virtualTables != null)
-            {
-                List<string> a = new List<string>();
-                a.AddRange(allTables);
-                a.AddRange(SystemConfig.virtualTables);
-                allTables = a.Distinct().ToArray();
-                a.Clear();
-            }
-
-            if (tables == null || tables.Length == 0)
+            if (tables.Length == 0)
                 throw new NullReferenceException("Не найдено ни одной таблицы!");
 
-            // Фильтруем таблицы по правам чтения
-            var filteredTables = new List<string>();
+            var accessibleTables = new List<string>();
+            bool hasExportRight = false;
+            bool hasImportRight = false;
             foreach (var table in tables)
             {
-                // Проверяем права через RoleManager или дефолтные права
-                bool hasAccess = RoleManager.CheckAccess(UserConfig.userRole, table, "read") ||
-                               (SystemConfig.DefaultRolePermissions.ContainsKey(UserConfig.userRole) &&
-                                SystemConfig.DefaultRolePermissions[UserConfig.userRole].CanRead);
+                var permissions = ScrapsRoleManager.GetEffectivePermissions(UserConfig.userRole, table);
+                if ((permissions & PermissionFlags.Read) == 0)
+                    continue;
 
-                if (hasAccess)
-                {
-                    filteredTables.Add(table);
-                }
+                accessibleTables.Add(table);
+                hasExportRight |= (permissions & PermissionFlags.Export) != 0;
+                hasImportRight |= (permissions & PermissionFlags.Import) != 0;
             }
-            tables = filteredTables.Distinct().ToArray();
+
+            tables = accessibleTables.Distinct().ToArray();
 
             // Для отладки: логируем доступные таблицы
             System.Diagnostics.Debug.WriteLine($"Доступные таблицы для {UserConfig.userRole}: {string.Join(", ", tables)}");
 
-
-            table_cb.Items.AddRange(tables.Select(t => SystemConfig.TranslateComboBox(t)).ToArray());
-
-            // Проверка прав на экспорт/импорт
-            bool hasExportRight = tables.Any(t => RoleManager.CheckAccess(UserConfig.userRole, t, "export"));
-            bool hasImportRight = tables.Any(t => RoleManager.CheckAccess(UserConfig.userRole, t, "import"));
+            table_cb.Items.AddRange(tables.Select(TranslationManager.Translate).ToArray());
 
             import_btn.Visible = hasImportRight;
             export_btn.Visible = hasExportRight;
@@ -113,7 +103,7 @@ namespace DPGTProject
 
         private void MainForm_LocationChanged(object sender, EventArgs e)
         {
-            SystemConfig.LastLocation = this.Location;
+            // Reserved for future UI state persistence.
         }
 
         private void dev_btn_Click(object sender, EventArgs e)
@@ -128,17 +118,25 @@ namespace DPGTProject
 
         private void tables_Click(object sender, EventArgs e)
         {
-            if (!tables.Contains(SystemConfig.UntranslateComboBox(table_cb.Text)))
+            var selectedTable = TranslationManager.Untranslate(table_cb.Text);
+            if (string.IsNullOrWhiteSpace(selectedTable))
+            {
+                MessageBox.Show("Выберите таблицу из списка.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (!tables.Contains(selectedTable))
             {
                 MessageBox.Show("Выбрана некорректная таблица!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error); return;
             }
             try
             {
-                if (SystemConfig.virtualTables.Contains(SystemConfig.UntranslateComboBox(table_cb.Text)))
+                var virtualTables = SystemConfig.virtualTables ?? Array.Empty<string>();
+                if (virtualTables.Contains(selectedTable))
                 {
                     string request = "";
                     
-                    switch (SystemConfig.UntranslateComboBox(table_cb.Text))
+                    switch (selectedTable)
                     {
                         case "VT_Client":        // ПРИМЕР ВИРТУАЛЬНОЙ ТАБЛИЦЫ!
                             request = "SELECT TOP (1000) [ID]\r\n      " +
@@ -151,13 +149,12 @@ namespace DPGTProject
                                 "FROM [SinaiDB].[dbo].[Rooms]\r\n";
                             break;
                     }
-                    ShowOrActivateForm<UniversalTableViewerForm>(table_cb.Text, request, true);
+                    ShowOrActivateForm<UniversalTableViewerForm>(selectedTable, request, true);
                 }
                 else
                 {
                     // Получаем оригинальное название таблицы перед открытием
-                    string tableName = SystemConfig.UntranslateComboBox(table_cb.Text);
-                    ShowOrActivateForm<UniversalTableViewerForm>(tableName);
+                    ShowOrActivateForm<UniversalTableViewerForm>(selectedTable);
                 }
             }
             catch (Exception ex)
@@ -194,3 +191,5 @@ namespace DPGTProject
         }
     }
 }
+
+

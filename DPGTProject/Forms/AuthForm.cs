@@ -2,6 +2,7 @@
 using System;
 using System.Data;
 using System.Windows.Forms;
+using Scraps.Security;
 
 namespace DPGTProject
 {
@@ -53,7 +54,19 @@ namespace DPGTProject
                 MessageBox.Show("Заполните все поля!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            if (!Auth.CheckIsUserValid(login_tb.Text, password_tb.Text))
+            bool validCredentials;
+            try
+            {
+                validCredentials = UserSession.CheckIsUserValid(login_tb.Text, password_tb.Text);
+            }
+            catch (Exception ex)
+            {
+                SystemConfig.lastError = ex.Message;
+                MessageBox.Show("Не удалось выполнить вход. Обратитесь к администратору.", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (!validCredentials)
             {
                 MessageBox.Show("Неверный логин или пароль!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -61,10 +74,10 @@ namespace DPGTProject
 
             UserConfig.Login(login_tb.Text);
 
-            SystemConfig.mainForm = new MainForm();
+            var mainForm = new MainForm();
             this.Hide();
-            SystemConfig.mainForm.Location = this.Location;
-            if (SystemConfig.mainForm.ShowDialog() != DialogResult.Retry) { Functions.Exit(); }
+            mainForm.Location = this.Location;
+            if (mainForm.ShowDialog() != DialogResult.Retry) { Functions.Exit(); }
             if (!this.IsDisposed) this.Show();
         }
 
@@ -79,7 +92,7 @@ namespace DPGTProject
 
         private void AuthForm_LocationChanged(object sender, EventArgs e)
         {
-            SystemConfig.LastLocation = this.Location;
+            // Reserved for future UI state persistence.
         }
 
         private void password_tb_KeyPress(object sender, KeyPressEventArgs e)

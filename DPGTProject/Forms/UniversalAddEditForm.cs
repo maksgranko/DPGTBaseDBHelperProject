@@ -1,21 +1,24 @@
-using DPGTProject.Databases;
+﻿using MSSQL = Scraps.Databases.MSSQL;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using Scraps.Localization;
 
 namespace DPGTProject.Forms
 {
     public partial class UniversalAddEditForm : BaseForm
     {
-        public string GeneratedInsertQuery { get; private set; }
-        public string GeneratedUpdateQuery { get; private set; }
+        public Dictionary<string, object> SubmittedValues { get; private set; }
 
         private Dictionary<string, object> _columnDefinitions;
         private Dictionary<string, Control> _dynamicControls = new Dictionary<string, Control>();
         private bool _isEditMode;
         private Dictionary<string, object> _existingData;
+        private Button _btnSave;
+        private Button _btnClose;
 
         private string _tableName;
 
@@ -24,7 +27,8 @@ namespace DPGTProject.Forms
             try
             {
                 _tableName = tableName;
-                InitializeComponent(columnDefinitions, false);
+                InitializeComponent();
+                InitializeDynamicForm(columnDefinitions, false);
             }
             catch
             {
@@ -42,7 +46,8 @@ namespace DPGTProject.Forms
             {
                 _existingData = existingData;
                 _tableName = tableName;
-                InitializeComponent(columnDefinitions, true);
+                InitializeComponent();
+                InitializeDynamicForm(columnDefinitions, true);
             }
             catch
             {
@@ -51,23 +56,15 @@ namespace DPGTProject.Forms
             }
         }
 
-        private void InitializeComponent(Dictionary<string, object> columnDefinitions, bool isEditMode)
+        private void InitializeDynamicForm(Dictionary<string, object> columnDefinitions, bool isEditMode)
         {
             _columnDefinitions = columnDefinitions;
             _isEditMode = isEditMode;
 
             this.SuspendLayout();
-            // 
-            // UniversalAddEditForm
-            // 
-            this.ClientSize = new Size(284, 261);
-            this.DoubleBuffered = true;
-            this.Name = "UniversalAddEditForm";
-            string translatedTableName = SystemConfig.TranslateComboBox(_tableName);
+            string translatedTableName = TranslationManager.Translate(_tableName);
             this.Text = _isEditMode ? $"Редактирование: {translatedTableName}" : $"Добавление: {translatedTableName}";
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.DialogResult = DialogResult.Abort;
-            this.MaximizeBox = false;
+            this.Resize += (s, e) => LayoutBottomButtons();
 
 
             try
@@ -94,12 +91,7 @@ namespace DPGTProject.Forms
             // Сначала создаем все Label чтобы вычислить максимальную ширину
             foreach (var column in _columnDefinitions)
             {
-                string translatedColumnName = column.Key;
-                if (SystemConfig.ColumnTranslations.TryGetValue(_tableName, out var translations) &&
-                    translations.TryGetValue(column.Key, out var translatedName))
-                {
-                    translatedColumnName = translatedName;
-                }
+                string translatedColumnName = TranslationManager.TranslateColumnName(_tableName, column.Key);
 
                 var label = new Label
                 {
@@ -147,6 +139,13 @@ namespace DPGTProject.Forms
 
         private Control CreateInputControl(string columnName, object type)
         {
+            if (TryCreateForeignKeyControl(columnName, out var fkControl))
+            {
+                return MSSQL.IsNullableColumn(_tableName, columnName)
+                    ? WrapWithNullablePanel(fkControl)
+                    : fkControl;
+            }
+
             // Для bool полей возвращаем обычный CheckBox
             if ((Type)type == typeof(bool))
                 return new CheckBox { Width = 150 };
@@ -195,44 +194,104 @@ namespace DPGTProject.Forms
 
             // Проверяем, поддерживает ли колонка NULL значения
             if (MSSQL.IsNullableColumn(_tableName, columnName))
-            {
-                // Создаем контейнер для основного контрола и чекбокса NULL
-                var container = new Panel
-                {
-                    Width = 180,
-                    Height = 30
-                };
-
-                // Настраиваем основной контрол
-                inputControl.Width = 120;
-                inputControl.Left = 0;
-                container.Controls.Add(inputControl);
-
-                // Добавляем чекбокс NULL
-                var nullCheckBox = new CheckBox
-                {
-                    Text = "NULL",
-                    Left = 125,
-                    Width = 50,
-                    Checked = false
-                };
-
-                nullCheckBox.CheckedChanged += (sender, e) =>
-                {
-                    inputControl.Enabled = !nullCheckBox.Checked;
-                    if (nullCheckBox.Checked)
-                    {
-                        if (inputControl is TextBox textBox) textBox.Text = string.Empty;
-                        else if (inputControl is NumericUpDown numeric) numeric.Value = 0;
-                        else if (inputControl is DateTimePicker datePicker) datePicker.Value = DateTime.Now;
-                    }
-                };
-
-                container.Controls.Add(nullCheckBox);
-                return container;
-            }
+                return WrapWithNullablePanel(inputControl);
 
             return inputControl;
+        }
+
+        private static Panel WrapWithNullablePanel(Control inputControl)
+        {
+            var container = new Panel
+            {
+                Width = 180,
+                Height = 30
+            };
+
+            inputControl.Width = 120;
+            inputControl.Left = 0;
+            container.Controls.Add(inputControl);
+
+            var nullCheckBox = new CheckBox
+            {
+                Text = "NULL",
+                Left = 125,
+                Width = 50,
+                Checked = false
+            };
+
+            nullCheckBox.CheckedChanged += (sender, e) =>
+            {
+                inputControl.Enabled = !nullCheckBox.Checked;
+                if (!nullCheckBox.Checked) return;
+
+                if (inputControl is TextBox textBox) textBox.Text = string.Empty;
+                else if (inputControl is NumericUpDown numeric) numeric.Value = 0;
+                else if (inputControl is DateTimePicker datePicker) datePicker.Value = DateTime.Now;
+                else if (inputControl is ComboBox comboBox)
+                {
+                    if (comboBox.Items.Count > 0) comboBox.SelectedIndex = -1;
+                    else comboBox.SelectedItem = null;
+                }
+            };
+
+            container.Controls.Add(nullCheckBox);
+            return container;
+        }
+
+        private bool TryCreateForeignKeyControl(string columnName, out Control control)
+        {
+            control = null;
+
+            try
+            {
+                var fk = MSSQL.GetForeignKeys(_tableName, null, null)
+                    .FirstOrDefault(x => string.Equals(x.Column, columnName, StringComparison.OrdinalIgnoreCase));
+                if (fk == null)
+                    return false;
+
+                string overrideKey = $"{_tableName}.{columnName}";
+                string displayColumn = null;
+                if (SystemConfig.ForeignKeyDisplayColumnOverrides.TryGetValue(overrideKey, out var configuredDisplay) &&
+                    !string.IsNullOrWhiteSpace(configuredDisplay))
+                {
+                    displayColumn = configuredDisplay;
+                }
+
+                var data = MSSQL.GetForeignKeyLookup(_tableName, columnName, displayColumn, null, null, null);
+                if (data == null || !data.Columns.Contains("Value"))
+                    return false;
+
+                if (!data.Columns.Contains("DisplayWithId"))
+                    data.Columns.Add("DisplayWithId", typeof(string));
+
+                foreach (DataRow row in data.Rows)
+                {
+                    string valueText = row["Value"] == DBNull.Value || row["Value"] == null
+                        ? string.Empty
+                        : row["Value"].ToString();
+                    string displayText = data.Columns.Contains("Display") && row["Display"] != DBNull.Value && row["Display"] != null
+                        ? row["Display"].ToString()
+                        : valueText;
+
+                    row["DisplayWithId"] = $"{displayText}[{valueText}]";
+                }
+
+                var combo = new ComboBox
+                {
+                    DropDownStyle = ComboBoxStyle.DropDownList,
+                    Width = 150,
+                    DataSource = data,
+                    ValueMember = "Value",
+                    DisplayMember = "DisplayWithId"
+                };
+
+                control = combo;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private void SetControlValue(Control control, object value)
@@ -271,7 +330,10 @@ namespace DPGTProject.Forms
                     checkBox.Checked = value != null && Convert.ToBoolean(value);
                     break;
                 case ComboBox comboBox:
-                    comboBox.SelectedItem = value;
+                    if (comboBox.DataSource != null && !string.IsNullOrWhiteSpace(comboBox.ValueMember))
+                        comboBox.SelectedValue = value;
+                    else
+                        comboBox.SelectedItem = value;
                     break;
             }
         }
@@ -334,38 +396,53 @@ namespace DPGTProject.Forms
             if (control is CheckBox checkBox)
                 return checkBox.Checked;
             if (control is ComboBox comboBox)
+            {
+                if (comboBox.DataSource != null && !string.IsNullOrWhiteSpace(comboBox.ValueMember))
+                    return comboBox.SelectedValue;
                 return comboBox.SelectedItem;
+            }
 
             throw new ArgumentException("Неподдерживаемый тип контрола");
         }
 
         private void ConfigureButtons()
         {
-            Button btnSave = new Button
+            _btnSave = new Button
             {
                 Text = _isEditMode ? "Изменить" : "Добавить",
                 Width = 100,
                 DialogResult = DialogResult.OK
             };
-            btnSave.Click += BtnSave_Click;
-            Controls.Add(btnSave);
+            _btnSave.Click += BtnSave_Click;
+            _btnSave.Anchor = AnchorStyles.Bottom;
+            Controls.Add(_btnSave);
 
-            Button btnClose = new Button
+            _btnClose = new Button
             {
                 Text = "Закрыть",
                 Width = 100,
                 DialogResult = DialogResult.Cancel
             };
-            btnClose.Click += (s, e) => Close();
-            Controls.Add(btnClose);
+            _btnClose.Click += (s, e) => Close();
+            _btnClose.Anchor = AnchorStyles.Bottom;
+            Controls.Add(_btnClose);
 
-            // Расположение кнопок с учетом размера формы
-            int buttonY = Height - 70;
-            btnSave.Location = new Point(Width / 2 - btnSave.Width - 10, buttonY);
-            btnClose.Location = new Point(Width / 2 + 10, buttonY);
+            LayoutBottomButtons();
+        }
 
-            btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnClose.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+        private void LayoutBottomButtons()
+        {
+            if (_btnSave == null || _btnClose == null)
+                return;
+
+            const int spacing = 12;
+            const int bottomMargin = 16;
+            int totalWidth = _btnSave.Width + spacing + _btnClose.Width;
+            int startX = (ClientSize.Width - totalWidth) / 2;
+            int y = ClientSize.Height - _btnSave.Height - bottomMargin;
+
+            _btnSave.Location = new Point(startX, y);
+            _btnClose.Location = new Point(startX + _btnSave.Width + spacing, y);
         }
 
         private void BtnSave_Click(object sender, EventArgs e)
@@ -375,89 +452,36 @@ namespace DPGTProject.Forms
 
             try
             {
-                GeneratedInsertQuery = GenerateSqlQuery(SqlQueryType.Insert);
-                GeneratedUpdateQuery = GenerateSqlQuery(SqlQueryType.Update);
+                SubmittedValues = BuildSubmittedValues();
             }
             catch (Exception ex)
             {
-                string errorDetails = $"Ошибка при генерации SQL запроса:\n{ex.Message}";
+                string errorDetails = $"Ошибка при подготовке данных:\n{ex.Message}";
                 if (ex.InnerException != null)
                 {
                     errorDetails += $"\nВнутренняя ошибка: {ex.InnerException.Message}";
                 }
-                MessageBox.Show(errorDetails, "Ошибка SQL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(errorDetails, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 DialogResult = DialogResult.None;
             }
         }
 
-        private enum SqlQueryType { Insert, Update }
-
-        private string GenerateSqlQuery(SqlQueryType queryType)
+        private Dictionary<string, object> BuildSubmittedValues()
         {
-            if (queryType == SqlQueryType.Insert)
+            var values = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var control in _dynamicControls)
             {
-                var columns = new List<string>();
-                var values = new List<string>();
+                // Identity поля не редактируем и не добавляем через форму.
+                if (MSSQL.IsIdentityColumn(_tableName, control.Key))
+                    continue;
 
-                foreach (var control in _dynamicControls)
-                {
-                    string untranslatedColumn = control.Key;
-                    if (SystemConfig.ColumnTranslations.TryGetValue(_tableName, out var translations) &&
-                        translations.ContainsValue(control.Key))
-                    {
-                        untranslatedColumn = translations.First(x => x.Value == control.Key).Key;
-                    }
-
-                    // Не добавляем identity колонки в INSERT
-                    if (!MSSQL.IsIdentityColumn(_tableName, untranslatedColumn))
-                    {
-                        columns.Add(untranslatedColumn);
-                        values.Add(FormatSqlValue(GetControlValue(control.Value)));
-                    }
-                }
-
-                string untranslatedTableName = _tableName;
-                if (SystemConfig.TableTranslations.ContainsValue(_tableName))
-                {
-                    untranslatedTableName = SystemConfig.TableTranslations.First(x => x.Value == _tableName).Key;
-                }
-                return $"INSERT INTO {untranslatedTableName} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", values)})";
+                values[control.Key] = GetControlValue(control.Value);
             }
-            else // Update
-            {
-                var setParts = new List<string>();
-                foreach (var control in _dynamicControls)
-                {
-                    string untranslatedColumn = control.Key;
-                    if (SystemConfig.ColumnTranslations.TryGetValue(_tableName, out var translations) &&
-                        translations.ContainsValue(control.Key))
-                    {
-                        untranslatedColumn = translations.First(x => x.Value == control.Key).Key;
-                    }
 
-                    // Не добавляем identity колонки в SET
-                    if (!MSSQL.IsIdentityColumn(_tableName, untranslatedColumn))
-                    {
-                        setParts.Add($"{untranslatedColumn} = {FormatSqlValue(GetControlValue(control.Value))}");
-                    }
-                }
-                string untranslatedTableName = _tableName;
-                if (SystemConfig.TableTranslations.ContainsValue(_tableName))
-                {
-                    untranslatedTableName = SystemConfig.TableTranslations.First(x => x.Value == _tableName).Key;
-                }
-                return $"UPDATE {untranslatedTableName} SET {string.Join(", ", setParts)} WHERE %WHERE%";
-            }
-        }
-
-        private string FormatSqlValue(object value)
-        {
-            if (value == null) return "NULL";
-            if (value is string strValue) return $"'{strValue.Replace("'", "''")}'";
-            if (value is DateTime dt) return $"'{dt:yyyy-MM-dd HH:mm:ss}'";
-            if (value is bool boolValue) return boolValue ? "1" : "0";
-            if (value is decimal || value is float || value is double) return value.ToString().Replace(",",".");
-            return value.ToString();
+            return values;
         }
     }
 }
+
+

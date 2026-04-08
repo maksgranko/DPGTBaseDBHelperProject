@@ -1,13 +1,13 @@
-using DPGTProject.Configs;
-using DPGTProject.Databases;
+﻿using DPGTProject.Configs;
 using DPGTProject.Forms;
-using OfficeOpenXml;
+using Scraps.Import;
 using System;
-using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using Scraps.Localization;
+using PermissionFlags = Scraps.Security.PermissionFlags;
+using ScrapsRoleManager = Scraps.Security.RoleManager;
 
 namespace DPGTProject
 {
@@ -19,70 +19,34 @@ namespace DPGTProject
         {
             InitializeComponent();
             if (!SystemConfig.moreExitButtons) { exit_btn.Visible = false; }
+
             var filteredTables = SystemConfig.tables
                 .Where(t =>
                 {
-                    bool hasAccess = RoleManager.CheckAccess(UserConfig.userRole, t, "import") && RoleManager.CheckAccess(UserConfig.userRole, t, "write");
-                    return hasAccess;
+                    var permissions = ScrapsRoleManager.GetEffectivePermissions(UserConfig.userRole, t);
+                    return (permissions & (PermissionFlags.Import | PermissionFlags.Write)) ==
+                           (PermissionFlags.Import | PermissionFlags.Write);
                 })
-                .Select(t => SystemConfig.TranslateComboBox(t))
+                .Select(TranslationManager.Translate)
                 .ToArray();
-            this.tableComboBox.Items.AddRange(filteredTables);
+
+            tableComboBox.Items.AddRange(filteredTables);
         }
 
         private void SelectFile(object sender, EventArgs e)
         {
-            OpenFileDialog openDialog = new OpenFileDialog();
-            openDialog.Filter = "Excel Files|*.xlsx|CSV Files|*.csv";
-
-            if (openDialog.ShowDialog() == DialogResult.OK)
+            using (var openDialog = new OpenFileDialog())
             {
+                openDialog.Filter = "Excel Files|*.xlsx|CSV Files|*.csv";
+
+                if (openDialog.ShowDialog() != DialogResult.OK)
+                    return;
+
                 try
                 {
-                    if (openDialog.FilterIndex == 1) // Excel
-                    {
-                        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-                        using (var excel = new ExcelPackage(new FileInfo(openDialog.FileName)))
-                        {
-                            var worksheet = excel.Workbook.Worksheets.First();
-                            _importData = new DataTable();
-
-                            // Заголовки
-                            for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
-                            {
-                                _importData.Columns.Add(worksheet.Cells[1, col].Text);
-                            }
-
-                            // Данные
-                            for (int row = 2; row <= worksheet.Dimension.End.Row; row++)
-                            {
-                                var newRow = _importData.NewRow();
-                                for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
-                                {
-                                    newRow[col - 1] = worksheet.Cells[row, col].Text;
-                                }
-                                _importData.Rows.Add(newRow);
-                            }
-                        }
-                    }
-                    else // CSV
-                    {
-                        _importData = new DataTable();
-                        using (var reader = new StreamReader(openDialog.FileName))
-                        {
-                            string[] headers = reader.ReadLine().Split(',');
-                            foreach (string header in headers)
-                            {
-                                _importData.Columns.Add(header);
-                            }
-
-                            while (!reader.EndOfStream)
-                            {
-                                string[] rows = reader.ReadLine().Split(',');
-                                _importData.Rows.Add(rows);
-                            }
-                        }
-                    }
+                    _importData = openDialog.FilterIndex == 1
+                        ? DataImportService.LoadExcelToDataTable(openDialog.FileName)
+                        : DataImportService.LoadCsvToDataTable(openDialog.FileName, new[] { ',', ';', '\t' }, autoDetectDelimiter: true);
 
                     dataGridView1.DataSource = _importData;
                     importBtn.Enabled = false;
@@ -104,82 +68,11 @@ namespace DPGTProject
                 return;
             }
 
-            string tableName = SystemConfig.UntranslateComboBox(tableComboBox.Text);
-            var dbSchema = MSSQL.GetTableSchema(tableName);
+            string tableName = TranslationManager.Untranslate(tableComboBox.Text);
 
-            // Проверка количества колонок
-            if (_importData.Columns.Count != dbSchema.Keys.Count)
+            if (!DataImportService.ValidateImport(_importData, tableName, out var errors, allowTranslatedColumns: true))
             {
-                MessageBox.Show($"Несовпадение количества колонок: в таблице {dbSchema.Keys.Count}, в файле {_importData.Columns.Count}",
-                    "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                importBtn.Enabled = false;
-                return;
-            }
-
-            // Проверка названий колонок (учитываем переведенные имена)
-            var importColumns = _importData.Columns.Cast<DataColumn>().Select(c => c.ColumnName).ToList();
-            var missingColumns = new List<string>();
-
-            // Проверяем каждую колонку из БД
-            foreach (var dbColumn in dbSchema.Keys)
-            {
-                // Ищем оригинальное имя
-                bool found = importColumns.Contains(dbColumn);
-
-                // Если не нашли, ищем переведенное имя
-                if (!found && SystemConfig.ColumnTranslations.TryGetValue(tableName, out var translations))
-                {
-                    if (translations.TryGetValue(dbColumn, out var translatedName))
-                    {
-                        found = importColumns.Contains(translatedName);
-                    }
-                }
-
-                if (!found)
-                {
-                    missingColumns.Add(dbColumn);
-                }
-            }
-
-            if (missingColumns.Any())
-            {
-                MessageBox.Show($"Отсутствуют обязательные колонки: {string.Join(", ", missingColumns)}",
-                    "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                importBtn.Enabled = false;
-                return;
-            }
-
-            // Проверка типов данных (учитываем переведенные имена)
-            var typeErrors = new List<string>();
-            foreach (DataColumn column in _importData.Columns)
-            {
-                string columnName = column.ColumnName;
-                string originalName = columnName;
-
-                // Если имя колонки переведено, получаем оригинальное
-                if (SystemConfig.ColumnTranslations.TryGetValue(tableName, out var translations))
-                {
-                    var reverseTranslations = translations.ToDictionary(x => x.Value, x => x.Key);
-                    if (reverseTranslations.TryGetValue(columnName, out var origName))
-                    {
-                        originalName = origName;
-                    }
-                }
-
-                if (dbSchema.TryGetValue(originalName, out var dbType))
-                {
-                    // Простая проверка числовых типов
-                    if ((dbType == "int" || dbType == "decimal") &&
-                        !double.TryParse(_importData.Rows[0][column].ToString(), out _))
-                    {
-                        typeErrors.Add($"{columnName}: ожидается {dbType}, получено string");
-                    }
-                }
-            }
-
-            if (typeErrors.Any())
-            {
-                MessageBox.Show($"Несовместимость типов данных:\n{string.Join("\n", typeErrors)}",
+                MessageBox.Show(string.Join("\n", errors),
                     "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 importBtn.Enabled = false;
                 return;
@@ -195,12 +88,17 @@ namespace DPGTProject
 
             try
             {
-                string tableName = SystemConfig.UntranslateComboBox(tableComboBox.Text);
-                MSSQL.ImportData(tableName, _importData);
+                string tableName = TranslationManager.Untranslate(tableComboBox.Text);
+                DataImportService.ImportToTableSafe(
+                    tableName,
+                    _importData,
+                    roleName: UserConfig.userRole,
+                    required: PermissionFlags.Import | PermissionFlags.Write,
+                    allowTranslatedColumns: true);
 
                 MessageBox.Show("Данные успешно импортированы",
                     "Успешно", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                this.Close();
+                Close();
             }
             catch (Exception ex)
             {
@@ -211,7 +109,7 @@ namespace DPGTProject
 
         private void exit_btn_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
     }
 }

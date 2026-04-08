@@ -1,4 +1,4 @@
-namespace DPGTProject
+﻿namespace DPGTProject
 {
     partial class UniversalTableViewerForm
     {
@@ -149,7 +149,7 @@ namespace DPGTProject
             this.find_next_btn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.find_next_btn.Name = "find_next_btn";
             this.find_next_btn.Size = new System.Drawing.Size(23, 22);
-            this.find_next_btn.Text = "↑";
+            this.find_next_btn.Text = "в†‘";
             this.find_next_btn.ToolTipText = "Далее";
             this.find_next_btn.Click += new System.EventHandler(this.FindNext_Click);
             // 
@@ -158,7 +158,7 @@ namespace DPGTProject
             this.find_previous_btn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.find_previous_btn.Name = "find_previous_btn";
             this.find_previous_btn.Size = new System.Drawing.Size(23, 22);
-            this.find_previous_btn.Text = "↓";
+            this.find_previous_btn.Text = "в†“";
             this.find_previous_btn.ToolTipText = "Назад";
             this.find_previous_btn.Click += new System.EventHandler(this.FindPrevious_Click);
             // 

@@ -1,5 +1,5 @@
-using DPGTProject.Configs;
-using DPGTProject.Databases;
+﻿using DPGTProject.Configs;
+using MSSQL = Scraps.Databases.MSSQL;
 using DPGTProject.Forms;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
@@ -9,6 +9,9 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using PermissionFlags = Scraps.Security.PermissionFlags;
+using ScrapsRoleManager = Scraps.Security.RoleManager;
+using Scraps.Localization;
 
 namespace DPGTProject
 {
@@ -71,10 +74,11 @@ namespace DPGTProject
                 var filteredTables = SystemConfig.tables
                     .Where(t =>
                     {
-                        bool hasAccess = RoleManager.CheckAccess(UserConfig.userRole, t, "read") && RoleManager.CheckAccess(UserConfig.userRole, t, "export");
-                        return hasAccess;
+                        var permissions = ScrapsRoleManager.GetEffectivePermissions(UserConfig.userRole, t);
+                        return (permissions & (PermissionFlags.Read | PermissionFlags.Export)) ==
+                               (PermissionFlags.Read | PermissionFlags.Export);
                     })
-                    .Select(t => SystemConfig.TranslateComboBox(t))
+                    .Select(TranslationManager.Translate)
                     .ToArray();
                 reportTypeComboBox.Items.AddRange(filteredTables);
             }
@@ -89,7 +93,7 @@ namespace DPGTProject
 
                 if (radioNormalTable.Checked)
                 {
-                    string tableName = SystemConfig.UntranslateComboBox(reportTypeComboBox.SelectedItem?.ToString());
+                    string tableName = TranslationManager.Untranslate(reportTypeComboBox.SelectedItem?.ToString());
                     reportData = MSSQL.GetTableData(tableName);
                     try
                     {
@@ -104,7 +108,7 @@ namespace DPGTProject
                         MessageBox.Show("Не удалось получить данные таблицы!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
-                    reportData = MSSQL.Translate(reportData, tableName);
+                    reportData = TranslationManager.Translate(reportData, tableName);
 
                     dataGridView1.DataSource = _translatedData = reportData;
                 }
@@ -117,7 +121,7 @@ namespace DPGTProject
                         case "Отчёт 1":
                             reportData = MSSQL.GetDataTableFromSQL("Здесь_Вы_Задаёте_SQL-запрос, ну это к примеру"); // Получение данных
                             // Примечание: Для дат с-по в SQL используйте переменные dtp(DateTimePicker, intellisense подскажет при написании)
-                            reportData = MSSQL.Translate(reportData, "Пример 1");                                    // Как переводить колоны у таблиц
+                            reportData = TranslationManager.Translate(reportData, "Пример 1");                                    // Как переводить колоны у таблиц
                             throw new NotImplementedException("Задайте корректный алгоритм репорта!");               // Стереть, после того, как функция будет реализована корректно
                             break;                                                                                   // Ниже можно указать выполнение кода, при выборе любого из отчётов, работает также по названию.
                         case "Отчёт 2":
@@ -333,3 +337,7 @@ namespace DPGTProject
         }
     }
 }
+
+
+
+
