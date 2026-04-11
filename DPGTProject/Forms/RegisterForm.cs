@@ -73,7 +73,7 @@ namespace DPGTProject
 
             if (registered)
             {
-                UserConfig.Login(login_tb.Text);
+                UserSession.LoginByName(login_tb.Text);
                 MessageBox.Show("Успешная регистрация!", "Успешно!", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 var mainForm = new MainForm();

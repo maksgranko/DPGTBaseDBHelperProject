@@ -14,7 +14,7 @@ namespace DPGTProject
     {
         #region --- UserSpace ---
         #region --- Работа с базой данных ---
-        public static string databaseName = "";                                                                         // !!! ВВЕДИТЕ НАЗВАНИЕ БД, ЭТО НЕОБХОДИМО В ПЕРВУЮ ОЧЕРЕДЬ !!!
+        public static string databaseName = "SinaiDB";                                                                         // !!! ВВЕДИТЕ НАЗВАНИЕ БД, ЭТО НЕОБХОДИМО В ПЕРВУЮ ОЧЕРЕДЬ !!!
         public static string connectionString = MSSQL.ConnectionStringBuilder(databaseName);                         // !!! ПОМЕНЯТЬ ОСНОВУ СТРОКИ МОЖНО В Database.cs МЕТОД: ConnectionStringBuilder !!!
         #endregion --- Работа с базой данных ---
 
@@ -119,6 +119,17 @@ namespace DPGTProject
         // ["Users.Role"] = "RoleName"
         public static Dictionary<string, string> ForeignKeyDisplayColumnOverrides = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         #endregion --- FK отображение в Add/Edit ---
+
+        #region --- Виртуальные таблицы ---
+        // SQL для виртуальных таблиц. Ключ = имя виртуальной таблицы.
+        // Примечание: пример VT_Client использует SinaiDB как экспериментальную БД.
+        public static Dictionary<string, string> VirtualTableQueries = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["VT_Client"] =
+                "SELECT TOP (1000) [ID], [CodeName], [Type], [PricePerNight], [Capacity], [IsAvailable], [CleaningStatus] " +
+                "FROM [SinaiDB].[dbo].[Rooms]"
+        };
+        #endregion --- Виртуальные таблицы ---
         #endregion --- UserSpace ---
         #region --- DevSpace ---
         // Системные настройки, здесь нет необходимости что-либо менять

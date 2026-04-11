@@ -6,8 +6,10 @@ using System.Data;
 using System.Linq;
 using System.Windows.Forms;
 using Scraps.Localization;
+using Scraps.Databases;
 using PermissionFlags = Scraps.Security.PermissionFlags;
 using ScrapsRoleManager = Scraps.Security.RoleManager;
+using Scraps.Security;
 
 namespace DPGTProject
 {
@@ -40,8 +42,8 @@ namespace DPGTProject
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            hello_lb.Text = "Здравствуй, " + UserConfig.userLogin + "!";
-            role_lb.Text = "Ваша роль: " + UserConfig.userRole;
+            hello_lb.Text = "Здравствуй, " + UserSession.UserLogin + "!";
+            role_lb.Text = "Ваша роль: " + UserSession.UserRole;
 
             // Базовые таблицы уже подготовлены в SystemConfig.Initialize().
             tables = (SystemConfig.tables ?? Array.Empty<string>())
@@ -57,8 +59,12 @@ namespace DPGTProject
             bool hasImportRight = false;
             foreach (var table in tables)
             {
-                var permissions = ScrapsRoleManager.GetEffectivePermissions(UserConfig.userRole, table);
+                var permissions = ScrapsRoleManager.GetEffectivePermissions(UserSession.UserRole, table);
                 if ((permissions & PermissionFlags.Read) == 0)
+                    continue;
+
+                if ((SystemConfig.virtualTables ?? Array.Empty<string>()).Contains(table) &&
+                    !VirtualTableRegistry.CheckAccess(table, UserSession.UserRole, PermissionFlags.Read, out _))
                     continue;
 
                 accessibleTables.Add(table);
@@ -69,7 +75,7 @@ namespace DPGTProject
             tables = accessibleTables.Distinct().ToArray();
 
             // Для отладки: логируем доступные таблицы
-            System.Diagnostics.Debug.WriteLine($"Доступные таблицы для {UserConfig.userRole}: {string.Join(", ", tables)}");
+            System.Diagnostics.Debug.WriteLine($"Доступные таблицы для {UserSession.UserRole}: {string.Join(", ", tables)}");
 
             table_cb.Items.AddRange(tables.Select(TranslationManager.Translate).ToArray());
 
@@ -91,14 +97,14 @@ namespace DPGTProject
             // Очищаем combobox
             table_cb.Items.Clear();
 
-            UserConfig.Logout();
+            UserSession.Logout();
             this.DialogResult = DialogResult.Retry;
             this.Close();
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            UserConfig.Logout();
+            UserSession.Logout();
         }
 
         private void MainForm_LocationChanged(object sender, EventArgs e)
@@ -134,26 +140,10 @@ namespace DPGTProject
                 var virtualTables = SystemConfig.virtualTables ?? Array.Empty<string>();
                 if (virtualTables.Contains(selectedTable))
                 {
-                    string request = "";
-                    
-                    switch (selectedTable)
-                    {
-                        case "VT_Client":        // ПРИМЕР ВИРТУАЛЬНОЙ ТАБЛИЦЫ!
-                            request = "SELECT TOP (1000) [ID]\r\n      " +
-                                ",[CodeName]\r\n      " +
-                                ",[Type]\r\n      " +
-                                ",[PricePerNight]\r\n      " +
-                                ",[Capacity]\r\n      " +
-                                ",[IsAvailable]\r\n      " +
-                                ",[CleaningStatus]\r\n  " +
-                                "FROM [SinaiDB].[dbo].[Rooms]\r\n";
-                            break;
-                    }
-                    ShowOrActivateForm<UniversalTableViewerForm>(selectedTable, request, true);
+                    ShowOrActivateForm<UniversalTableViewerForm>(selectedTable, true);
                 }
                 else
                 {
-                    // Получаем оригинальное название таблицы перед открытием
                     ShowOrActivateForm<UniversalTableViewerForm>(selectedTable);
                 }
             }

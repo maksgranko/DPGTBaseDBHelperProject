@@ -10,6 +10,9 @@ using System.Windows.Forms;
 using PermissionFlags = Scraps.Security.PermissionFlags;
 using ScrapsRoleManager = Scraps.Security.RoleManager;
 using Scraps.Localization;
+using Scraps.Databases;
+using DataTableSearch = Scraps.Data.DataTables.Search;
+using Scraps.Security;
 
 namespace DPGTProject
 {
@@ -19,10 +22,11 @@ namespace DPGTProject
         private string _currentFilter;
         private DataTable _originalData;
         private DataTable _filteredData;
-        private List<DataGridViewCell> _searchResults = new List<DataGridViewCell>();
+        private DataTableSearch.MatchNavigator _searchNavigator;
+        private string _lastSearchText = string.Empty;
         private readonly Dictionary<string, Dictionary<string, string>> _fkDisplayMap =
             new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-        private int _currentSearchIndex = -1;
+        private bool _useVirtualTableRegistry;
         private bool request = false;
         private string SQLRequest = "";
 
@@ -46,7 +50,7 @@ namespace DPGTProject
 
         private PermissionFlags GetCurrentPermissions()
         {
-            return ScrapsRoleManager.GetEffectivePermissions(UserConfig.userRole, _tableName ?? string.Empty);
+            return ScrapsRoleManager.GetEffectivePermissions(UserSession.UserRole, _tableName ?? string.Empty);
         }
 
         private bool HasCurrentPermission(PermissionFlags flag)
@@ -119,6 +123,15 @@ namespace DPGTProject
             TableName = tableName;
             UpdateButtonsVisibility();
         }
+
+        public UniversalTableViewerForm(string tableName, bool useVirtualTableRegistry) : this()
+        {
+            _useVirtualTableRegistry = useVirtualTableRegistry;
+            request = useVirtualTableRegistry;
+            TableName = tableName;
+            UpdateButtonsVisibility();
+        }
+
         public UniversalTableViewerForm(string tableName, string SQLReq, bool req) : this()
         {
             SQLRequest = SQLReq;
@@ -131,12 +144,21 @@ namespace DPGTProject
         {
             try
             {
-                if (request)
+                if (_useVirtualTableRegistry)
+                {
+                    _originalData = VirtualTableRegistry.GetData(TableName, UserSession.UserRole, PermissionFlags.Read);
+                }
+                else if (request)
                 {
                     _originalData = MSSQL.GetDataTableFromSQL(SQLRequest);
                 }
-                else _originalData = MSSQL.GetTableData(TableName);
+                else
+                {
+                    _originalData = MSSQL.GetTableData(TableName);
+                }
+
                 BuildForeignKeyDisplayMap();
+                ResetSearchState();
                 dataGridView1.DataSource = TranslateForView(_originalData);
                 statusLabel.Text = $"Загружено записей: {_originalData.Rows.Count}";
             }
@@ -226,52 +248,65 @@ namespace DPGTProject
 
         private void HandleSearch(bool isNext)
         {
-            SearchAllColumns();
-            if (_searchResults.Count == 0) return;
+            var source = dataGridView1.DataSource as DataTable;
+            if (source == null)
+                return;
 
-            _currentSearchIndex = isNext ? _currentSearchIndex + 1 : _currentSearchIndex - 1;
-            if (_currentSearchIndex > _searchResults.Count) _currentSearchIndex = _searchResults.Count-1;
-            else if (_currentSearchIndex < 0) _currentSearchIndex = 0;
-            NavigateToResult();
+            var searchText = find_tb.Text;
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                ResetSearchState();
+                statusLabel.Text = "Введите текст для поиска";
+                return;
+            }
+
+            bool needRebuild = _searchNavigator == null ||
+                               !string.Equals(_lastSearchText, searchText, StringComparison.OrdinalIgnoreCase);
+
+            if (needRebuild)
+            {
+                _searchNavigator = DataTableSearch.CreateNavigator(source, searchText, ignoreCase: true);
+                _lastSearchText = searchText;
+            }
+
+            if (_searchNavigator == null || _searchNavigator.Count == 0)
+            {
+                statusLabel.Text = "Ничего не найдено";
+                return;
+            }
+
+            DataTableSearch.DataCellMatch match;
+            if (needRebuild)
+                match = isNext ? _searchNavigator.First() : _searchNavigator.Last();
+            else
+                match = isNext ? _searchNavigator.Next(wrap: true) : _searchNavigator.Prev(wrap: true);
+
+            NavigateToResult(match);
+            statusLabel.Text = $"Найдено: {_searchNavigator.Count} (позиция {_searchNavigator.Index + 1})";
         }
 
         private void FindNext_Click(object sender, EventArgs e) => HandleSearch(true);
+
+        private void ResetSearchState()
+        {
+            _searchNavigator = null;
+            _lastSearchText = string.Empty;
+        }
         private void FindPrevious_Click(object sender, EventArgs e) => HandleSearch(false);
 
-        private void SearchAllColumns()
+        private void NavigateToResult(DataTableSearch.DataCellMatch match)
         {
-            _searchResults.Clear();
-            string searchText = find_tb.Text.ToLower();
-            if (string.IsNullOrEmpty(searchText)) return;
+            if (match == null || match.RowIndex < 0 || match.RowIndex >= dataGridView1.Rows.Count)
+                return;
 
-            foreach (DataGridViewRow row in dataGridView1.Rows)
-            {
-                foreach (DataGridViewCell cell in row.Cells)
-                {
-                    if (cell.Value != null && cell.Value.ToString().ToLower().Contains(searchText))
-                    {
-                        _searchResults.Add(cell);
-                    }
-                }
-            }
+            if (!dataGridView1.Columns.Contains(match.ColumnName))
+                return;
 
-            if (_searchResults.Count > 0)
-            {
-                statusLabel.Text = $"Найдено: {_searchResults.Count}";
-            }
-            else
-            {
-                statusLabel.Text = "Ничего не найдено";
-            }
-        }
-
-        private void NavigateToResult()
-        {
-            var cell = _searchResults[_currentSearchIndex];
+            var targetCell = dataGridView1.Rows[match.RowIndex].Cells[match.ColumnName];
             dataGridView1.ClearSelection();
-            dataGridView1.CurrentCell = cell;
-            dataGridView1.Rows[cell.RowIndex].Selected = true;
-            dataGridView1.FirstDisplayedScrollingRowIndex = cell.RowIndex;
+            dataGridView1.CurrentCell = targetCell;
+            dataGridView1.Rows[match.RowIndex].Selected = true;
+            dataGridView1.FirstDisplayedScrollingRowIndex = match.RowIndex;
         }
 
         private void Filter_tb_KeyDown(object sender, KeyEventArgs e)
@@ -286,45 +321,21 @@ namespace DPGTProject
         {
             try
             {
-                if (_originalData == null) return;
-                if (filterText == null) { LoadData(); }
-                _currentFilter = filterText;
-                if (string.IsNullOrEmpty(filterText))
-                {
-                    _filteredData = _originalData.Copy();
-                }
-                else
-                {
-                    var filterParts = new List<string>();
-                    foreach (DataColumn column in _originalData.Columns)
-                    {
-                        string condition = null;
+                if (_originalData == null)
+                    return;
 
-                        if (column.DataType == typeof(string)) condition = $"[{column.ColumnName}] LIKE '%{filterText}%'";
-                        else if (column.DataType == typeof(int) || column.DataType == typeof(decimal))
-                        {
-                            if (int.TryParse(filterText, out _) || decimal.TryParse(filterText, out _))
-                            {
-                                condition = $"[{column.ColumnName}] = {filterText}";
-                            }
-                        }
-                        else if (column.DataType == typeof(DateTime))
-                        {
-                            if (DateTime.TryParse(filterText, out _)) condition = $"[{column.ColumnName}] = #{filterText}#";
-                        }
-
-                        if (!string.IsNullOrEmpty(condition)) filterParts.Add(condition);
-                    }
-
-                    string filterExpression = string.Join(" OR ", filterParts);
-
-                    _filteredData = _originalData.Clone();
-                    var rows = _originalData.Select(filterExpression);
-                    foreach (var row in rows) _filteredData.ImportRow(row);
-                }
+                _currentFilter = filterText ?? string.Empty;
+                _filteredData = string.IsNullOrWhiteSpace(_currentFilter)
+                    ? _originalData.Copy()
+                    : DataTableSearch.FilterRows(_originalData, _currentFilter, ignoreCase: true);
             }
-            catch { MessageBox.Show("Не удалось применить фильтр!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
+            catch
+            {
+                MessageBox.Show("Не удалось применить фильтр!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
+            ResetSearchState();
             dataGridView1.DataSource = TranslateForView(_filteredData);
             statusLabel.Text = $"Отфильтровано записей: {_filteredData.Rows.Count}";
         }
@@ -369,13 +380,13 @@ namespace DPGTProject
 
             try
             {
-                var foreignKeys = MSSQL.GetForeignKeys(TableName, null, null);
-                foreach (var fk in foreignKeys)
+                var metadata = MSSQL.GetTableEditMetadata(TableName, null);
+                foreach (var column in metadata.Columns.Where(c => c.ForeignKey != null))
                 {
-                    if (fk == null || string.IsNullOrWhiteSpace(fk.Column))
+                    if (string.IsNullOrWhiteSpace(column.Column))
                         continue;
 
-                    string overrideKey = $"{TableName}.{fk.Column}";
+                    string overrideKey = $"{TableName}.{column.Column}";
                     string displayColumn = null;
                     if (SystemConfig.ForeignKeyDisplayColumnOverrides.TryGetValue(overrideKey, out var configuredDisplay) &&
                         !string.IsNullOrWhiteSpace(configuredDisplay))
@@ -383,7 +394,10 @@ namespace DPGTProject
                         displayColumn = configuredDisplay;
                     }
 
-                    var lookup = MSSQL.GetForeignKeyLookup(TableName, fk.Column, displayColumn, null, null, null);
+                    if (string.IsNullOrWhiteSpace(displayColumn))
+                        displayColumn = column.LookupDisplayColumn;
+
+                    var lookup = MSSQL.GetForeignKeyLookup(TableName, column.Column, displayColumn, null, null, null);
                     if (lookup == null || !lookup.Columns.Contains("Value"))
                         continue;
 
@@ -407,8 +421,8 @@ namespace DPGTProject
                     if (map.Count == 0)
                         continue;
 
-                    _fkDisplayMap[fk.Column] = map;
-                    var translatedColumn = TranslationManager.TranslateColumnName(TableName, fk.Column);
+                    _fkDisplayMap[column.Column] = map;
+                    var translatedColumn = TranslationManager.TranslateColumnName(TableName, column.Column);
                     _fkDisplayMap[translatedColumn] = map;
                 }
             }

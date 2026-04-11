@@ -72,7 +72,7 @@ namespace DPGTProject
                 return;
             }
 
-            UserConfig.Login(login_tb.Text);
+            UserSession.LoginByName(login_tb.Text);
 
             var mainForm = new MainForm();
             this.Hide();

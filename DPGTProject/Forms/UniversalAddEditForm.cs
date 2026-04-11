@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
 using Scraps.Localization;
@@ -21,6 +22,8 @@ namespace DPGTProject.Forms
         private Button _btnClose;
 
         private string _tableName;
+        private Dictionary<string, MSSQL.TableEditColumnMetadata> _metadataByColumn =
+            new Dictionary<string, MSSQL.TableEditColumnMetadata>(StringComparer.OrdinalIgnoreCase);
 
         public UniversalAddEditForm(Dictionary<string, object> columnDefinitions, string tableName)
         {
@@ -69,6 +72,7 @@ namespace DPGTProject.Forms
 
             try
             {
+                LoadTableMetadata();
                 CreateDynamicControls();
                 ConfigureButtons();
             }
@@ -82,6 +86,94 @@ namespace DPGTProject.Forms
 
             this.ResumeLayout(false);
         }
+        private void LoadTableMetadata()
+        {
+            _metadataByColumn.Clear();
+            try
+            {
+                var metadata = MSSQL.GetTableEditMetadata(_tableName, null);
+                foreach (var column in metadata.Columns)
+                {
+                    if (column == null || string.IsNullOrWhiteSpace(column.Column))
+                        continue;
+
+                    _metadataByColumn[column.Column] = column;
+                }
+            }
+            catch
+            {
+                // fallback to point-queries MSSQL.IsNullableColumn/MSSQL.IsIdentityColumn
+            }
+        }
+
+        private MSSQL.TableEditColumnMetadata GetColumnMetadata(string columnName)
+        {
+            if (string.IsNullOrWhiteSpace(columnName))
+                return null;
+
+            return _metadataByColumn.TryGetValue(columnName, out var metadata)
+                ? metadata
+                : null;
+        }
+
+        private bool IsNullableColumn(string columnName)
+        {
+            var metadata = GetColumnMetadata(columnName);
+            if (metadata != null)
+                return metadata.IsNullable;
+
+            return MSSQL.IsNullableColumn(_tableName, columnName);
+        }
+
+        private bool IsIdentityColumn(string columnName)
+        {
+            var metadata = GetColumnMetadata(columnName);
+            if (metadata != null)
+                return metadata.IsIdentity;
+
+            return MSSQL.IsIdentityColumn(_tableName, columnName);
+        }
+
+        private string GetColumnDataType(string columnName)
+        {
+            var metadata = GetColumnMetadata(columnName);
+            return (metadata?.DataType ?? string.Empty).Trim().ToLowerInvariant();
+        }
+
+        private Type GetColumnType(string columnName, object fallbackType)
+        {
+            switch (GetColumnDataType(columnName))
+            {
+                case "int":
+                case "smallint":
+                case "tinyint":
+                    return typeof(int);
+                case "bigint":
+                    return typeof(long);
+                case "decimal":
+                case "numeric":
+                case "money":
+                case "smallmoney":
+                    return typeof(decimal);
+                case "float":
+                case "real":
+                    return typeof(double);
+                case "bit":
+                    return typeof(bool);
+                case "date":
+                case "datetime":
+                case "datetime2":
+                case "smalldatetime":
+                    return typeof(DateTime);
+                case "time":
+                    return typeof(TimeSpan);
+                case "uniqueidentifier":
+                    return typeof(Guid);
+            }
+
+            return fallbackType as Type ?? typeof(string);
+        }
+
         private void CreateDynamicControls()
         {
             int yOffset = 20;
@@ -141,21 +233,22 @@ namespace DPGTProject.Forms
         {
             if (TryCreateForeignKeyControl(columnName, out var fkControl))
             {
-                return MSSQL.IsNullableColumn(_tableName, columnName)
+                return IsNullableColumn(columnName)
                     ? WrapWithNullablePanel(fkControl)
                     : fkControl;
             }
 
+            var inputType = GetColumnType(columnName, type);
+
             // Для bool полей возвращаем обычный CheckBox
-            if ((Type)type == typeof(bool))
+            if (inputType == typeof(bool))
                 return new CheckBox { Width = 150 };
 
             // Создаем основной контрол ввода
             Control inputControl;
-#pragma warning disable CS0252
-            if (type == typeof(string))
+            if (inputType == typeof(string))
                 inputControl = new TextBox { Width = 150 };
-            else if (type == typeof(int))
+            else if (inputType == typeof(int) || inputType == typeof(byte))
                 inputControl = new NumericUpDown
                 {
                     Minimum = int.MinValue,
@@ -163,37 +256,37 @@ namespace DPGTProject.Forms
                     DecimalPlaces = 0,
                     Width = 150
                 };
-            else if (type == typeof(byte))
+            else if (inputType == typeof(long))
                 inputControl = new NumericUpDown
                 {
-                    Minimum = byte.MinValue,
-                    Maximum = byte.MaxValue,
+                    Minimum = long.MinValue,
+                    Maximum = long.MaxValue,
                     DecimalPlaces = 0,
                     Width = 150
                 };
-            else if (type == typeof(double) || type == typeof(decimal) || type == typeof(float))
+            else if (inputType == typeof(double) || inputType == typeof(decimal) || inputType == typeof(float))
                 inputControl = new NumericUpDown
                 {
                     Minimum = decimal.MinValue,
                     Maximum = decimal.MaxValue,
-                    DecimalPlaces = 2,
+                    DecimalPlaces = 4,
                     Width = 150
                 };
-            else if (type == typeof(DateTime))
+            else if (inputType == typeof(DateTime))
                 inputControl = new DateTimePicker
                 {
                     Format = DateTimePickerFormat.Short,
                     Width = 150
                 };
+            else if (inputType == typeof(TimeSpan) || inputType == typeof(Guid))
+                inputControl = new TextBox { Width = 150 };
             else
             {
                 SystemConfig.lastError = $"Неподдерживаемый тип для {columnName}";
                 throw new ArgumentException(SystemConfig.lastError);
             }
-#pragma warning restore CS0252
 
-            // Проверяем, поддерживает ли колонка NULL значения
-            if (MSSQL.IsNullableColumn(_tableName, columnName))
+            if (IsNullableColumn(columnName))
                 return WrapWithNullablePanel(inputControl);
 
             return inputControl;
@@ -244,9 +337,8 @@ namespace DPGTProject.Forms
 
             try
             {
-                var fk = MSSQL.GetForeignKeys(_tableName, null, null)
-                    .FirstOrDefault(x => string.Equals(x.Column, columnName, StringComparison.OrdinalIgnoreCase));
-                if (fk == null)
+                var metadata = GetColumnMetadata(columnName);
+                if (metadata == null || metadata.ForeignKey == null)
                     return false;
 
                 string overrideKey = $"{_tableName}.{columnName}";
@@ -256,6 +348,9 @@ namespace DPGTProject.Forms
                 {
                     displayColumn = configuredDisplay;
                 }
+
+                if (string.IsNullOrWhiteSpace(displayColumn))
+                    displayColumn = metadata.LookupDisplayColumn;
 
                 var data = MSSQL.GetForeignKeyLookup(_tableName, columnName, displayColumn, null, null, null);
                 if (data == null || !data.Columns.Contains("Value"))
@@ -321,7 +416,17 @@ namespace DPGTProject.Forms
                     textBox.Text = value?.ToString();
                     break;
                 case NumericUpDown numericUpDown:
-                    numericUpDown.Value = value == null ? 0 : Convert.ToDecimal(value);
+                    if (value == null)
+                    {
+                        numericUpDown.Value = 0;
+                    }
+                    else
+                    {
+                        var numericValue = Convert.ToDecimal(value, CultureInfo.InvariantCulture);
+                        if (numericValue < numericUpDown.Minimum) numericValue = numericUpDown.Minimum;
+                        if (numericValue > numericUpDown.Maximum) numericValue = numericUpDown.Maximum;
+                        numericUpDown.Value = numericValue;
+                    }
                     break;
                 case DateTimePicker dateTimePicker:
                     dateTimePicker.Value = value == null ? DateTime.Now : Convert.ToDateTime(value);
@@ -338,6 +443,11 @@ namespace DPGTProject.Forms
             }
         }
 
+        private string GetDisplayColumnName(string columnName)
+        {
+            return TranslationManager.TranslateColumnName(_tableName, columnName);
+        }
+
         private bool ValidateInput()
         {
             foreach (var control in _dynamicControls)
@@ -346,23 +456,27 @@ namespace DPGTProject.Forms
                 {
                     object value = GetControlValue(control.Value);
 
-                    // Для Panel с чекбоксом NULL пропускаем проверку
                     if (control.Value is Panel panel)
                     {
                         var checkbox = panel.Controls.OfType<CheckBox>().FirstOrDefault();
                         if (checkbox != null && checkbox.Checked) continue;
                     }
 
-                    if (value == null ||
-                        (value is string strValue && string.IsNullOrWhiteSpace(strValue)))
+                    if (value == null || (value is string strValue && string.IsNullOrWhiteSpace(strValue)))
                     {
-                        MessageBox.Show($"Поле {control.Key} не может быть пустым");
+                        MessageBox.Show($"Поле '{GetDisplayColumnName(control.Key)}' не может быть пустым");
+                        return false;
+                    }
+
+                    if (!IsValueCompatibleWithColumn(control.Key, value, out var validationError))
+                    {
+                        MessageBox.Show($"Поле '{GetDisplayColumnName(control.Key)}': {validationError}", "Ошибка валидации", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return false;
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Ошибка валивации {control.Key}: {ex.Message}");
+                    MessageBox.Show($"Ошибка валидации поля '{GetDisplayColumnName(control.Key)}': {ex.Message}");
                     return false;
                 }
             }
@@ -403,6 +517,68 @@ namespace DPGTProject.Forms
             }
 
             throw new ArgumentException("Неподдерживаемый тип контрола");
+        }
+
+        private bool IsValueCompatibleWithColumn(string columnName, object value, out string error)
+        {
+            error = null;
+            try
+            {
+                ConvertValueForColumn(columnName, value);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
+        }
+
+        private object ConvertValueForColumn(string columnName, object value)
+        {
+            if (value == null || value == DBNull.Value)
+                return null;
+
+            var dataType = GetColumnDataType(columnName);
+            var textValue = value.ToString();
+
+            switch (dataType)
+            {
+                case "tinyint":
+                    return Convert.ToByte(value, CultureInfo.InvariantCulture);
+                case "smallint":
+                    return Convert.ToInt16(value, CultureInfo.InvariantCulture);
+                case "int":
+                    return Convert.ToInt32(value, CultureInfo.InvariantCulture);
+                case "bigint":
+                    return Convert.ToInt64(value, CultureInfo.InvariantCulture);
+                case "decimal":
+                case "numeric":
+                case "money":
+                case "smallmoney":
+                    return Convert.ToDecimal(value, CultureInfo.InvariantCulture);
+                case "float":
+                case "real":
+                    return Convert.ToDouble(value, CultureInfo.InvariantCulture);
+                case "bit":
+                    return Convert.ToBoolean(value, CultureInfo.InvariantCulture);
+                case "date":
+                case "datetime":
+                case "datetime2":
+                case "smalldatetime":
+                    return Convert.ToDateTime(value, CultureInfo.InvariantCulture);
+                case "time":
+                    if (value is TimeSpan ts) return ts;
+                    if (TimeSpan.TryParse(textValue, CultureInfo.InvariantCulture, out var parsedTs)) return parsedTs;
+                    if (TimeSpan.TryParse(textValue, CultureInfo.CurrentCulture, out parsedTs)) return parsedTs;
+                    throw new FormatException("ожидается значение времени (например 12:30:00).");
+                case "uniqueidentifier":
+                    if (value is Guid g) return g;
+                    if (Guid.TryParse(textValue, out var parsedGuid)) return parsedGuid;
+                    throw new FormatException("ожидается корректный GUID.");
+                default:
+                    return value;
+            }
         }
 
         private void ConfigureButtons()
@@ -473,10 +649,10 @@ namespace DPGTProject.Forms
             foreach (var control in _dynamicControls)
             {
                 // Identity поля не редактируем и не добавляем через форму.
-                if (MSSQL.IsIdentityColumn(_tableName, control.Key))
+                if (IsIdentityColumn(control.Key))
                     continue;
 
-                values[control.Key] = GetControlValue(control.Value);
+                values[control.Key] = ConvertValueForColumn(control.Key, GetControlValue(control.Value));
             }
 
             return values;

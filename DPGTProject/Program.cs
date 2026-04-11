@@ -1,5 +1,6 @@
 ﻿using DPGTProject.Configs;
 using Scraps.Configs;
+using Scraps.Databases;
 using Scraps.Databases.Utilities;
 using Scraps.Localization;
 using Scraps.Security;
@@ -21,6 +22,7 @@ namespace DPGTProject
             SystemConfig.Initialize();
             SyncTranslations();
             InitializeSecurity();
+            RegisterVirtualTables();
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -70,6 +72,19 @@ namespace DPGTProject
 
             // Scraps 0.15: fallback-права по роли применяются самим RoleManager.
             RoleManager.Initialize(roles, SystemConfig.DefaultRolePermissions);
+        }
+
+        private static void RegisterVirtualTables()
+        {
+            VirtualTableRegistry.Clear();
+
+            foreach (var pair in SystemConfig.VirtualTableQueries ?? new Dictionary<string, string>())
+            {
+                if (string.IsNullOrWhiteSpace(pair.Key) || string.IsNullOrWhiteSpace(pair.Value))
+                    continue;
+
+                VirtualTableRegistry.Register(pair.Key, pair.Value);
+            }
         }
 
         private static void SyncTranslations()

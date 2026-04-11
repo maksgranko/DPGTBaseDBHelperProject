@@ -151,7 +151,6 @@
     <Compile Include="Forms\UniversalTableViewerForm.Designer.cs">
       <DependentUpon>UniversalTableViewerForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Configs\UserConfig.cs" />
     <EmbeddedResource Include="Forms\DataImportForm.resx">
       <DependentUpon>DataImportForm.cs</DependentUpon>
     </EmbeddedResource>

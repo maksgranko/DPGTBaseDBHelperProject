@@ -6,12 +6,14 @@ using iTextSharp.text.pdf;
 using OfficeOpenXml;
 using System;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using PermissionFlags = Scraps.Security.PermissionFlags;
 using ScrapsRoleManager = Scraps.Security.RoleManager;
 using Scraps.Localization;
+using Scraps.Security;
 
 namespace DPGTProject
 {
@@ -25,11 +27,12 @@ namespace DPGTProject
         {
             this.reportTypeComboBox.Items.AddRange(ReportsNames);
         }
+
         public ReportGeneratorForm()
         {
             InitializeComponent();
             ReportTypeChanged(null, null);
-            if (!Test.Initialized || UserConfig.userRole != "Администратор") radioButtonExportTables.Visible = false;
+            if (!Test.Initialized || UserSession.UserRole != "Администратор") radioButtonExportTables.Visible = false;
         }
 
         private void DataTimePickerEnable(bool enable)
@@ -48,7 +51,7 @@ namespace DPGTProject
 
             generate_btn.Enabled = true;
             reportTypeComboBox.Enabled = true;
-            if (radioButtonExportTables.Checked && UserConfig.userRole != "Администратор")
+            if (radioButtonExportTables.Checked && UserSession.UserRole != "Администратор")
             {
                 DataTimePickerEnable(false);
                 MessageBox.Show("Экспорт всех таблиц доступен только администраторам",
@@ -66,7 +69,7 @@ namespace DPGTProject
                 DataTimePickerEnable(true);
                 reportTypeComboBox.Items.AddRange(new object[] {
                     "Отчёт 1",
-                    "Отчёт 2"}); // Здесь вы добавляете отчёты(репорты), а ниже инициализируете и программируете
+                    "Отчёт 2"});
             }
             else
             {
@@ -74,7 +77,7 @@ namespace DPGTProject
                 var filteredTables = SystemConfig.tables
                     .Where(t =>
                     {
-                        var permissions = ScrapsRoleManager.GetEffectivePermissions(UserConfig.userRole, t);
+                        var permissions = ScrapsRoleManager.GetEffectivePermissions(UserSession.UserRole, t);
                         return (permissions & (PermissionFlags.Read | PermissionFlags.Export)) ==
                                (PermissionFlags.Read | PermissionFlags.Export);
                     })
@@ -83,6 +86,7 @@ namespace DPGTProject
                 reportTypeComboBox.Items.AddRange(filteredTables);
             }
         }
+
         public void GenerateReport(object sender, EventArgs e)
         {
             start_date = start_dtp.Value.ToShortDateString();
@@ -93,23 +97,22 @@ namespace DPGTProject
 
                 if (radioNormalTable.Checked)
                 {
-                    string tableName = TranslationManager.Untranslate(reportTypeComboBox.SelectedItem?.ToString());
+                    string selected = reportTypeComboBox.SelectedItem?.ToString();
+                    if (string.IsNullOrWhiteSpace(selected))
+                    {
+                        MessageBox.Show("Пожалуйста, выберите таблицу из списка.", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    string tableName = TranslationManager.Untranslate(selected);
                     reportData = MSSQL.GetTableData(tableName);
-                    try
-                    {
-                        this.dataGridView1.DataSource = _translatedData = reportData;
-                    }
-                    catch
-                    {
-                        //rep[]; 
-                    }
                     if (reportData == null)
                     {
                         MessageBox.Show("Не удалось получить данные таблицы!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
-                    reportData = TranslationManager.Translate(reportData, tableName);
 
+                    reportData = TranslationManager.Translate(reportData, tableName);
                     dataGridView1.DataSource = _translatedData = reportData;
                 }
                 else
@@ -117,28 +120,25 @@ namespace DPGTProject
                     switch (reportTypeComboBox.SelectedItem?.ToString())
                     {
 #pragma warning disable CS0162
-                        // Здесь алгоритм репортов.
                         case "Отчёт 1":
-                            reportData = MSSQL.GetDataTableFromSQL("Здесь_Вы_Задаёте_SQL-запрос, ну это к примеру"); // Получение данных
-                            // Примечание: Для дат с-по в SQL используйте переменные dtp(DateTimePicker, intellisense подскажет при написании)
-                            reportData = TranslationManager.Translate(reportData, "Пример 1");                                    // Как переводить колоны у таблиц
-                            throw new NotImplementedException("Задайте корректный алгоритм репорта!");               // Стереть, после того, как функция будет реализована корректно
-                            break;                                                                                   // Ниже можно указать выполнение кода, при выборе любого из отчётов, работает также по названию.
-                        case "Отчёт 2":
-                            // ...
+                            reportData = MSSQL.GetDataTableFromSQL("Здесь_Вы_Задаёте_SQL-запрос, ну это к примеру");
+                            reportData = TranslationManager.Translate(reportData, "Пример 1");
                             throw new NotImplementedException("Задайте корректный алгоритм репорта!");
-                            break;
+                        case "Отчёт 2":
+                            throw new NotImplementedException("Задайте корректный алгоритм репорта!");
                         default:
                             MessageBox.Show("Пожалуйста, выберите тип отчёта из списка", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             return;
                     }
+#pragma warning restore CS0162
+
                     if (reportData == null)
                     {
                         MessageBox.Show("Нет данных для отображения!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
+
                     dataGridView1.DataSource = _translatedData = reportData;
-#pragma warning restore CS0162
                 }
             }
             catch (Exception ex)
@@ -147,17 +147,16 @@ namespace DPGTProject
                     "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private void reportTypeComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             switch (reportTypeComboBox.SelectedItem?.ToString())
             {
-                // Здесь можно добавить код, который работает при выборе любого из значений.
                 case "Отчёт 1":
                     break;
                 case "Отчёт 2":
                     break;
                 default:
-                    //DataTimePickerEnable(false); // Уберёт DateTimePickе'ры при выборе любого
                     return;
             }
         }
@@ -166,169 +165,175 @@ namespace DPGTProject
         {
             if (radioButtonExportTables.Checked)
             {
-                try
-                {
-                    // Создаем папку для экспорта
-                    string exportDir = Path.Combine(Application.StartupPath, "exports", DateTime.Now.ToString("yyyy-MM-dd"));
-                    Directory.CreateDirectory(exportDir);
-
-                    int exportedCount = 0;
-
-                    // Экспортируем каждую таблицу
-                    foreach (string tableName in SystemConfig.tables)
-                    {
-                        try
-                        {
-                            // Получаем данные таблицы
-                            DataTable tableData = MSSQL.GetTableData(tableName);
-
-                            // Создаем Excel файл
-                            string filePath = Path.Combine(exportDir, $"{tableName}.xlsx");
-                            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-                            using (var excelPackage = new ExcelPackage())
-                            {
-                                var worksheet = excelPackage.Workbook.Worksheets.Add(tableName);
-                                worksheet.Cells["A1"].LoadFromDataTable(tableData, true);
-                                worksheet.Cells.AutoFitColumns();
-                                excelPackage.SaveAs(new FileInfo(filePath));
-                            }
-                            exportedCount++;
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show($"Ошибка при экспорте таблицы {tableName}:\n{ex.Message}",
-                                "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        }
-                    }
-
-                    MessageBox.Show($"Успешно экспортировано {exportedCount} таблиц в:\n{exportDir}",
-                        "Экспорт завершен", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при экспорте таблиц:\n{ex.Message}",
-                        "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                ExportAllTables();
                 return;
             }
 
             if (dataGridView1.DataSource == null)
             {
-                MessageBox.Show("Пожалуйста, сначала сформируйте отчет",
+                MessageBox.Show("Пожалуйста, сначала сформируйте отчёт",
                     "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             try
             {
-                SaveFileDialog saveDialog = new SaveFileDialog();
-                saveDialog.Filter = "Excel Files|*.xlsx|PDF Files|*.pdf";
-
-                if (saveDialog.ShowDialog() == DialogResult.OK)
+                using (var saveDialog = new SaveFileDialog { Filter = "Excel Files|*.xlsx|PDF Files|*.pdf" })
                 {
-                    // Use pre-translated data
-                    var data = _translatedData;
+                    if (saveDialog.ShowDialog() != DialogResult.OK)
+                        return;
 
+                    var data = _translatedData;
+                    if (data == null)
+                    {
+                        MessageBox.Show("Нет данных для экспорта.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    if (saveDialog.FilterIndex == 1)
+                    {
+                        ExportDataTableToExcel(data, saveDialog.FileName, "Отчёт");
+                    }
+                    else
+                    {
+                        ExportDataTableToPdf(data, saveDialog.FileName);
+                    }
+
+                    MessageBox.Show($"Отчет успешно экспортирован в:\n{saveDialog.FileName}",
+                        "Успешно", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при экспорте:\n{ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void ExportAllTables()
+        {
+            try
+            {
+                string exportDir = BuildExportDirectoryPath();
+                Directory.CreateDirectory(exportDir);
+
+                int exportedCount = 0;
+                foreach (string tableName in SystemConfig.tables)
+                {
                     try
                     {
-                        if (saveDialog.FilterIndex == 1)
-                        {
-                            ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
-                            using (var excelPackage = new ExcelPackage())
-                            {
-                                var worksheet = excelPackage.Workbook.Worksheets.Add("Отчёт");
-                                worksheet.Cells["A1"].LoadFromDataTable(data, true);
-                                worksheet.Cells.AutoFitColumns();
-                                excelPackage.SaveAs(new FileInfo(saveDialog.FileName));
-                            }
-                        }
-                        else
-                        {
-                            using (var fs = new FileStream(saveDialog.FileName, FileMode.Create))
-                            {
-                                var document = new Document();
-                                var writer = PdfWriter.GetInstance(document, fs);
-                                var baseFont = BaseFont.CreateFont("c:/windows/fonts/arial.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-                                document.Open();
-
-                                // Добавляем центрированный заголовок "Отчёт"
-                                var title = new Paragraph("Отчёт", new iTextSharp.text.Font(baseFont, 14, iTextSharp.text.Font.BOLD))
-                                {
-                                    Alignment = Element.ALIGN_CENTER
-                                };
-                                document.Add(title);
-
-                                // Добавляем пустую строку
-                                document.Add(new Paragraph(" "));
-
-                                // Добавляем название отчёта
-                                var reportName = new Paragraph(reportTypeComboBox.SelectedItem?.ToString() ?? "Без названия",
-                                    new iTextSharp.text.Font(baseFont, 12))
-                                {
-                                    Alignment = Element.ALIGN_CENTER
-                                };
-                                document.Add(reportName);
-
-                                document.Add(new Paragraph(" "));
-
-                                var reportDate = new Paragraph("Дата создания отчёта: " + DateTime.Now.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("ru-RU")),
-                                    new Font(baseFont, 10))
-                                {
-                                    Alignment = Element.ALIGN_LEFT
-                                };
-                                document.Add(reportDate);
-                                if (start_date != null || end_date != null)
-                                {
-                                    reportDate = new Paragraph($"Отчёт {(!(start_date is null) ? "с " + start_date : null)} {(!(end_date is null) ? "по " + end_date : null)}", new Font(baseFont, 10))
-                                    {
-                                        Alignment = Element.ALIGN_LEFT
-                                    };
-                                    document.Add(reportDate);
-                                }
-
-                                // Добавляем пустую строку перед таблицей
-                                document.Add(new Paragraph(" "));
-
-                                var table = new PdfPTable(data.Columns.Count);
-                                table.SetWidths(Enumerable.Repeat(1f, data.Columns.Count).ToArray());
-
-                                var boldFont = new Font(baseFont, 10);
-                                var normalFont = new Font(baseFont, 9);
-
-                                // Headers
-                                foreach (DataColumn col in data.Columns)
-                                {
-                                    table.AddCell(new Phrase(col.ColumnName, boldFont));
-                                }
-
-                                // Data
-                                foreach (DataRow row in data.Rows)
-                                {
-                                    foreach (var item in row.ItemArray)
-                                    {
-                                        table.AddCell(new Phrase(item?.ToString() ?? "", normalFont));
-                                    }
-                                }
-
-                                document.Add(table);
-                                document.Close();
-                            }
-                        }
-
-                        MessageBox.Show($"Отчет успешно экспортирован в:\n{saveDialog.FileName}",
-                            "Успешно", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        DataTable tableData = MSSQL.GetTableData(tableName);
+                        string filePath = Path.Combine(exportDir, $"{tableName}.xlsx");
+                        ExportDataTableToExcel(tableData, filePath, tableName);
+                        exportedCount++;
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Ошибка при экспорте:\n{ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show($"Ошибка при экспорте таблицы {tableName}:\n{ex.Message}",
+                            "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 }
+
+                MessageBox.Show($"Успешно экспортировано {exportedCount} таблиц в:\n{exportDir}",
+                    "Экспорт завершен", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            catch
+            catch (Exception ex)
             {
-                MessageBox.Show("Не удалось экспортировать отчет. Проверьте доступ к выбранной папке.",
+                MessageBox.Show($"Ошибка при экспорте таблиц:\n{ex.Message}",
                     "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private static string BuildExportDirectoryPath()
+        {
+            return Path.Combine(Application.StartupPath, "exports", DateTime.Now.ToString("yyyy-MM-dd"));
+        }
+
+        private static void ExportDataTableToExcel(DataTable data, string filePath, string sheetName)
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            using (var excelPackage = new ExcelPackage())
+            {
+                var worksheet = excelPackage.Workbook.Worksheets.Add(sheetName);
+                worksheet.Cells["A1"].LoadFromDataTable(data, true);
+                worksheet.Cells.AutoFitColumns();
+                excelPackage.SaveAs(new FileInfo(filePath));
+            }
+        }
+
+        private void ExportDataTableToPdf(DataTable data, string filePath)
+        {
+            using (var fs = new FileStream(filePath, FileMode.Create))
+            {
+                var document = new Document();
+                PdfWriter.GetInstance(document, fs);
+                var baseFont = BaseFont.CreateFont("c:/windows/fonts/arial.ttf", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                document.Open();
+
+                AddPdfTitleBlock(document, baseFont);
+                AddPdfTable(document, data, baseFont);
+                document.Close();
+            }
+        }
+
+        private void AddPdfTitleBlock(Document document, BaseFont baseFont)
+        {
+            var title = new Paragraph("Отчёт", new iTextSharp.text.Font(baseFont, 14, iTextSharp.text.Font.BOLD))
+            {
+                Alignment = Element.ALIGN_CENTER
+            };
+            document.Add(title);
+            document.Add(new Paragraph(" "));
+
+            var reportName = new Paragraph(reportTypeComboBox.SelectedItem?.ToString() ?? "Без названия",
+                new iTextSharp.text.Font(baseFont, 12))
+            {
+                Alignment = Element.ALIGN_CENTER
+            };
+            document.Add(reportName);
+            document.Add(new Paragraph(" "));
+
+            var reportDate = new Paragraph("Дата создания отчёта: " + DateTime.Now.ToString("dd MMMM yyyy", new CultureInfo("ru-RU")),
+                new Font(baseFont, 10))
+            {
+                Alignment = Element.ALIGN_LEFT
+            };
+            document.Add(reportDate);
+
+            if (start_date != null || end_date != null)
+            {
+                var period = new Paragraph($"Отчёт {(!(start_date is null) ? "с " + start_date : null)} {(!(end_date is null) ? "по " + end_date : null)}",
+                    new Font(baseFont, 10))
+                {
+                    Alignment = Element.ALIGN_LEFT
+                };
+                document.Add(period);
+            }
+
+            document.Add(new Paragraph(" "));
+        }
+
+        private static void AddPdfTable(Document document, DataTable data, BaseFont baseFont)
+        {
+            var table = new PdfPTable(data.Columns.Count);
+            table.SetWidths(Enumerable.Repeat(1f, data.Columns.Count).ToArray());
+
+            var headerFont = new Font(baseFont, 10);
+            var normalFont = new Font(baseFont, 9);
+
+            foreach (DataColumn col in data.Columns)
+            {
+                table.AddCell(new Phrase(col.ColumnName, headerFont));
+            }
+
+            foreach (DataRow row in data.Rows)
+            {
+                foreach (var item in row.ItemArray)
+                {
+                    table.AddCell(new Phrase(item?.ToString() ?? string.Empty, normalFont));
+                }
+            }
+
+            document.Add(table);
         }
 
         private void exit_btn_Click(object sender, EventArgs e)
@@ -337,7 +342,3 @@ namespace DPGTProject
         }
     }
 }
-
-
-
-

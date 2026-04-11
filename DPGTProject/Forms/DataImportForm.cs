@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using Scraps.Localization;
 using PermissionFlags = Scraps.Security.PermissionFlags;
 using ScrapsRoleManager = Scraps.Security.RoleManager;
+using Scraps.Security;
 
 namespace DPGTProject
 {
@@ -23,7 +24,7 @@ namespace DPGTProject
             var filteredTables = SystemConfig.tables
                 .Where(t =>
                 {
-                    var permissions = ScrapsRoleManager.GetEffectivePermissions(UserConfig.userRole, t);
+                    var permissions = ScrapsRoleManager.GetEffectivePermissions(UserSession.UserRole, t);
                     return (permissions & (PermissionFlags.Import | PermissionFlags.Write)) ==
                            (PermissionFlags.Import | PermissionFlags.Write);
                 })
@@ -92,7 +93,7 @@ namespace DPGTProject
                 DataImportService.ImportToTableSafe(
                     tableName,
                     _importData,
-                    roleName: UserConfig.userRole,
+                    roleName: UserSession.UserRole,
                     required: PermissionFlags.Import | PermissionFlags.Write,
                     allowTranslatedColumns: true);
 
