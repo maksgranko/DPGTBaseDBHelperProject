@@ -253,6 +253,5 @@ public static Icon Icon = File.Exists("icon.ico") ? new Icon("icon.ico") : null;
 
 ## Для разработчиков
 
-- Не редактируйте `Scraps/` в рамках этого репозитория
 - Основная точка расширения: `SystemConfig` + формы в `DPGTProject/Forms`
 - Если добавляете новую бизнес-логику, сначала проверьте, нет ли уже подходящего API в библиотеке
