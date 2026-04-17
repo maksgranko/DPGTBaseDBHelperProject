@@ -45,7 +45,6 @@ public static DatabaseGenerationMode databaseGenerationMode = DatabaseGeneration
   - регистрация виртуальных таблиц
 - `DPGTProject/Configs/SystemConfig.cs` - основные настройки поведения приложения
 - `DPGTProject/Forms` - UI формы (авторизация, таблицы, отчеты, импорт)
-- `Scraps/` - исходники библиотеки для ориентира (не редактируются)
 
 ## Настройка базы данных
 
