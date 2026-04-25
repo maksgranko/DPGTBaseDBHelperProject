@@ -11,6 +11,7 @@ using PermissionFlags = Scraps.Security.PermissionFlags;
 using Scraps.Localization;
 using Scraps.Database.MSSQL;
 using Scraps.Security;
+using Scraps.Database;
 
 namespace DPGTProject
 {
