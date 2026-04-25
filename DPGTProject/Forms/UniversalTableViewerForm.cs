@@ -23,6 +23,19 @@ namespace DPGTProject
         private string _lastSearchText = string.Empty;
         private readonly Dictionary<string, Dictionary<string, string>> _fkDisplayMap =
             new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+        private static readonly string[] PreferredDisplayColumns =
+        {
+            "Name",
+            "Title",
+            "DisplayName",
+            "CodeName",
+            "Caption",
+            "Label",
+            "FullName",
+            "Description",
+            "Login",
+            "Code"
+        };
         private bool _useVirtualTableRegistry;
         private bool request = false;
         private string SQLRequest = "";
@@ -166,6 +179,8 @@ namespace DPGTProject
             try
             {
                 dataGridView1.EndEdit();
+                if (dataGridView1.DataSource != null && BindingContext[dataGridView1.DataSource] is CurrencyManager currencyManager)
+                    currencyManager.EndCurrentEdit();
                 dataGridView1.CurrentCell = null;
                 var changedData = (DataTable)dataGridView1.DataSource;
                 var untranslated = TranslationManager.Untranslate(changedData, TableName);
@@ -355,7 +370,7 @@ namespace DPGTProject
                 }
                 else
                 {
-                    _filteredData = FilterWithSql(TableName, _currentFilter);
+                    _filteredData = FilterByDisplayValues(_currentFilter);
                 }
             }
             catch
@@ -369,101 +384,52 @@ namespace DPGTProject
             statusLabel.Text = $"Отфильтровано записей: {_filteredData.Rows.Count}";
         }
 
-        private DataTable FilterWithSql(string tableName, string filterText)
+        private DataTable FilterByDisplayValues(string filterText)
         {
-            var metadata = MSSQL.GetTableEditMetadata(tableName, null);
-            var fkColumns = metadata.Columns.Where(c => c.ForeignKey != null).ToList();
+            if (_originalData == null)
+                return null;
 
-            var filterParts = new List<string>();
-            var joinList = new List<string>();
-            var parameters = new List<System.Data.SqlClient.SqlParameter>();
-            int paramIndex = 0;
-            int aliasCounter = 0;
-            var fkAliasMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(filterText))
+                return _originalData.Copy();
+
+            string needle = filterText.Trim().ToLowerInvariant();
+            var filtered = _originalData.Clone();
+
+            foreach (DataRow row in _originalData.Rows)
+            {
+                if (RowMatchesFilter(row, needle))
+                    filtered.ImportRow(row);
+            }
+
+            return filtered;
+        }
+
+        private bool RowMatchesFilter(DataRow row, string needle)
+        {
+            if (row == null)
+                return false;
 
             foreach (DataColumn column in _originalData.Columns)
             {
-                string condition = null;
-                var fk = fkColumns.FirstOrDefault(c => c.Column.Equals(column.ColumnName, StringComparison.OrdinalIgnoreCase));
+                var value = row[column];
+                if (value == null || value == DBNull.Value)
+                    continue;
 
-                if (fk != null)
+                var raw = Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+                if (raw.ToLowerInvariant().Contains(needle))
+                    return true;
+
+                if (_fkDisplayMap.TryGetValue(column.ColumnName, out var valueMap) &&
+                    !string.IsNullOrWhiteSpace(raw) &&
+                    valueMap.TryGetValue(raw, out var displayText) &&
+                    !string.IsNullOrWhiteSpace(displayText) &&
+                    displayText.ToLowerInvariant().Contains(needle))
                 {
-                    var fkTable = fk.ForeignKey.ReferenceTable;
-                    var fkReferencedColumn = fk.ForeignKey.ReferenceColumn;
-                    var displayCol = fk.LookupDisplayColumn ?? "name";
-
-                    string aliasKey = $"{fkTable}.{column.ColumnName}";
-                    string alias;
-                    if (!fkAliasMap.TryGetValue(aliasKey, out alias))
-                    {
-                        alias = $"t{aliasCounter++}";
-                        fkAliasMap[aliasKey] = alias;
-                        joinList.Add($"LEFT JOIN [{fkTable}] {alias} ON [{tableName}].[{column.ColumnName}] = {alias}.[{fkReferencedColumn}]");
-                    }
-
-                    string paramName = $"@p{paramIndex}";
-                    condition = $"{alias}.[{displayCol}] LIKE {paramName}";
-                    parameters.Add(new System.Data.SqlClient.SqlParameter(paramName, $"%{filterText}%"));
-                    paramIndex++;
-                }
-                else if (column.DataType == typeof(string))
-                {
-                    string paramName = $"@p{paramIndex}";
-                    condition = $"[{tableName}].[{column.ColumnName}] LIKE {paramName}";
-                    parameters.Add(new System.Data.SqlClient.SqlParameter(paramName, $"%{filterText}%"));
-                    paramIndex++;
-                }
-                else if (column.DataType == typeof(int) || column.DataType == typeof(decimal))
-                {
-                    if (int.TryParse(filterText, out _) || decimal.TryParse(filterText, out _))
-                    {
-                        string paramName = $"@p{paramIndex}";
-                        condition = $"[{tableName}].[{column.ColumnName}] = {paramName}";
-                        parameters.Add(new System.Data.SqlClient.SqlParameter(paramName, filterText));
-                        paramIndex++;
-                    }
-                }
-                else if (column.DataType == typeof(DateTime))
-                {
-                    if (DateTime.TryParse(filterText, out _))
-                    {
-                        string paramName = $"@p{paramIndex}";
-                        condition = $"[{tableName}].[{column.ColumnName}] = {paramName}";
-                        parameters.Add(new System.Data.SqlClient.SqlParameter(paramName, filterText));
-                        paramIndex++;
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(condition))
-                    filterParts.Add(condition);
-            }
-
-            if (filterParts.Count == 0)
-                return _originalData.Copy();
-
-            string whereClause = string.Join(" OR ", filterParts);
-            string joinClause = string.Join(" ", joinList);
-            string sql = $"SELECT [{tableName}].* FROM [{tableName}] {joinClause} WHERE {whereClause}";
-
-            try
-            {
-                using (var conn = new System.Data.SqlClient.SqlConnection(DPGTProject.SystemConfig.connectionString))
-                {
-                    conn.Open();
-                    using (var cmd = new System.Data.SqlClient.SqlCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddRange(parameters.ToArray());
-                        var adapter = new System.Data.SqlClient.SqlDataAdapter(cmd);
-                        var dt = new DataTable();
-                        adapter.Fill(dt);
-                        return dt;
-                    }
+                    return true;
                 }
             }
-            catch
-            {
-                return _originalData.Copy();
-            }
+
+            return false;
         }
 
         private void exit_btn_Click(object sender, EventArgs e)
@@ -512,36 +478,31 @@ namespace DPGTProject
                     if (string.IsNullOrWhiteSpace(column.Column))
                         continue;
 
-                    string overrideKey = $"{TableName}.{column.Column}";
-                    string displayColumn = null;
-                    if (SystemConfig.ForeignKeyDisplayColumnOverrides.TryGetValue(overrideKey, out var configuredDisplay) &&
-                        !string.IsNullOrWhiteSpace(configuredDisplay))
-                    {
-                        displayColumn = configuredDisplay;
-                    }
+                    string displayColumn = ResolveLookupDisplayColumn(
+                        column.Column,
+                        column.LookupDisplayColumn,
+                        column.ForeignKey.RefTable,
+                        column.ForeignKey.RefColumn);
 
-                    if (string.IsNullOrWhiteSpace(displayColumn))
-                        displayColumn = column.LookupDisplayColumn;
-
-                    var lookup = MSSQL.GetForeignKeyLookup(TableName, column.Column, displayColumn, null, null, null);
-                    if (lookup == null || !lookup.Columns.Contains("Value"))
+                    var lookupItems = MSSQL.GetForeignKeyLookupItems(TableName, column.Column, displayColumn, null, null, null);
+                    if (lookupItems == null || lookupItems.Count == 0)
                         continue;
 
                     var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                    foreach (DataRow row in lookup.Rows)
+                    foreach (var item in lookupItems)
                     {
-                        if (row["Value"] == null || row["Value"] == DBNull.Value)
+                        if (item?.Value == null || item.Value == DBNull.Value)
                             continue;
 
-                        var valueText = Convert.ToString(row["Value"], CultureInfo.InvariantCulture);
+                        var valueText = Convert.ToString(item.Value, CultureInfo.InvariantCulture);
                         if (string.IsNullOrWhiteSpace(valueText))
                             continue;
 
-                        var displayText = lookup.Columns.Contains("Display") && row["Display"] != null && row["Display"] != DBNull.Value
-                            ? row["Display"].ToString()
-                            : valueText;
+                        var displayText = string.IsNullOrWhiteSpace(item.Display)
+                            ? valueText
+                            : item.Display;
 
-                        map[valueText] = $"{displayText}[{valueText}]";
+                        map[valueText] = FormatLookupDisplay(displayText, valueText);
                     }
 
                     if (map.Count == 0)
@@ -556,6 +517,114 @@ namespace DPGTProject
             {
                 // Для виртуальных/нестандартных таблиц FK-метаданные могут быть недоступны.
             }
+        }
+
+        private static string FormatLookupDisplay(string displayText, string valueText)
+        {
+            if (string.IsNullOrWhiteSpace(displayText))
+                return valueText ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(valueText) ||
+                string.Equals(displayText, valueText, StringComparison.OrdinalIgnoreCase))
+            {
+                return displayText;
+            }
+
+            return $"{displayText} [{valueText}]";
+        }
+
+        private string ResolveLookupDisplayColumn(string columnName, string metadataDisplayColumn, string refTable, string refColumn)
+        {
+            string overrideKey = $"{TableName}.{columnName}";
+            string displayColumn = null;
+
+            if (SystemConfig.ForeignKeyDisplayColumnOverrides.TryGetValue(overrideKey, out var configuredDisplay) &&
+                !string.IsNullOrWhiteSpace(configuredDisplay))
+            {
+                displayColumn = configuredDisplay;
+            }
+
+            if (string.IsNullOrWhiteSpace(displayColumn))
+                displayColumn = metadataDisplayColumn;
+
+            if (string.IsNullOrWhiteSpace(displayColumn))
+                displayColumn = MSSQL.ResolveDisplayColumn(refTable, refColumn);
+
+            return ResolveDisplayColumnFallback(refTable, refColumn, displayColumn);
+        }
+
+        private static string ResolveDisplayColumnFallback(string refTable, string refColumn, string selectedDisplayColumn)
+        {
+            if (string.IsNullOrWhiteSpace(refTable))
+                return selectedDisplayColumn;
+
+            try
+            {
+                var schema = Current.GetTableSchema(refTable);
+                if (schema == null || !schema.Columns.Contains("ColumnName"))
+                    return selectedDisplayColumn;
+
+                var availableColumns = schema.Rows.Cast<DataRow>()
+                    .Select(r => r["ColumnName"]?.ToString())
+                    .Where(c => !string.IsNullOrWhiteSpace(c))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (availableColumns.Count == 0)
+                    return selectedDisplayColumn;
+
+                if (IsUsableDisplayColumn(selectedDisplayColumn, refColumn, availableColumns))
+                    return availableColumns.First(c => string.Equals(c, selectedDisplayColumn, StringComparison.OrdinalIgnoreCase));
+
+                foreach (var candidate in PreferredDisplayColumns)
+                {
+                    if (IsUsableDisplayColumn(candidate, refColumn, availableColumns))
+                        return availableColumns.First(c => string.Equals(c, candidate, StringComparison.OrdinalIgnoreCase));
+                }
+
+                var keywordMatch = availableColumns.FirstOrDefault(c =>
+                    !string.Equals(c, refColumn, StringComparison.OrdinalIgnoreCase) &&
+                    ContainsDisplayKeyword(c));
+
+                if (!string.IsNullOrWhiteSpace(keywordMatch))
+                    return keywordMatch;
+
+                return availableColumns.FirstOrDefault(c =>
+                           !string.Equals(c, refColumn, StringComparison.OrdinalIgnoreCase))
+                       ?? selectedDisplayColumn;
+            }
+            catch
+            {
+                return selectedDisplayColumn;
+            }
+        }
+
+        private static bool IsUsableDisplayColumn(string columnName, string refColumn, List<string> availableColumns)
+        {
+            if (string.IsNullOrWhiteSpace(columnName) || availableColumns == null || availableColumns.Count == 0)
+                return false;
+
+            if (string.Equals(columnName, refColumn, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return availableColumns.Any(c => string.Equals(c, columnName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool ContainsDisplayKeyword(string columnName)
+        {
+            if (string.IsNullOrWhiteSpace(columnName))
+                return false;
+
+            string lower = columnName.ToLowerInvariant();
+            return lower.Contains("name") ||
+                   lower.Contains("title") ||
+                   lower.Contains("display") ||
+                   lower.Contains("caption") ||
+                   lower.Contains("label") ||
+                   lower.Contains("description") ||
+                   lower.Contains("code") ||
+                   lower.Contains("login") ||
+                   lower.Contains("email");
         }
 
         private object GetCellValue(DataGridViewRow row, string originalColumnName)
@@ -634,8 +703,7 @@ namespace DPGTProject
             {
                 if (cell.OwningColumn.Name != "RowError")
                 {
-                    // Используем оригинальное имя столбца (как в DataTable)
-                    string columnName = cell.OwningColumn.Name;
+                    var columnName = TranslationManager.UntranslateColumnName(TableName, cell.OwningColumn.Name);
                     existingData[columnName] = cell.Value;
                 }
             }
@@ -730,4 +798,3 @@ namespace DPGTProject
         }
     }
 }
-

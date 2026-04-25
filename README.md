@@ -4,6 +4,8 @@
 
 Этот репозиторий - универсальный WinForms-конструктор приложений для работы с SQL Server: авторизация, роли/права, просмотр и редактирование таблиц, импорт/экспорт, отчеты и виртуальные таблицы.
 
+Важно: текущая версия проекта работает только с MSSQL.
+
 ## Что вам нужно перед стартом
 
 - Windows + Visual Studio 2022 (рекомендуется)
@@ -26,6 +28,7 @@ public static string connectionString = "";
 ```csharp
 public static bool tableAutodetect = true;
 public static DatabaseGenerationMode databaseGenerationMode = DatabaseGenerationMode.Simple;
+public static DatabaseProvider databaseProvider = DatabaseProvider.MSSQL;
 ```
 
 4. Запустите проект (`F5`).
@@ -41,7 +44,7 @@ public static DatabaseGenerationMode databaseGenerationMode = DatabaseGeneration
   - генерация/проверка БД
   - инициализация таблиц
   - загрузка переводов
-  - инициализация ролей
+  - инициализация ролевой модели из `SystemConfig`
   - регистрация виртуальных таблиц
 - `DPGTProject/Configs/SystemConfig.cs` - основные настройки поведения приложения
 - `DPGTProject/Forms` - UI формы (авторизация, таблицы, отчеты, импорт)
@@ -58,6 +61,12 @@ public static string connectionString = "";
 ```
 
 Если используете свой SQL Server-инстанс, задайте строку подключения вручную.
+
+Провайдер базы в проекте фиксирован на MSSQL:
+
+```csharp
+public static DatabaseProvider databaseProvider = DatabaseProvider.MSSQL;
+```
 
 ### Режим генерации схемы
 
@@ -212,6 +221,8 @@ public static bool exportRightInTables = false;
 public static DesignConfig.ApplicationTheme applicationTheme = DesignConfig.ApplicationTheme.Custom;
 public static Icon Icon = File.Exists("icon.ico") ? new Icon("icon.ico") : null;
 ```
+
+`ApplicationTheme.Custom` не применяет встроенные палитры и оставляет оформление под ваш ручной контроль.
 
 ## Импорт и отчеты
 

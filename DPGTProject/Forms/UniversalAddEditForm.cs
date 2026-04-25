@@ -26,6 +26,20 @@ namespace DPGTProject.Forms
         private Dictionary<string, TableEditColumnMetadata> _metadataByColumn =
             new Dictionary<string, TableEditColumnMetadata>(StringComparer.OrdinalIgnoreCase);
 
+        private static readonly string[] PreferredDisplayColumns =
+        {
+            "Name",
+            "Title",
+            "DisplayName",
+            "CodeName",
+            "Caption",
+            "Label",
+            "FullName",
+            "Description",
+            "Login",
+            "Code"
+        };
+
         public UniversalAddEditForm(Dictionary<string, object> columnDefinitions, string tableName)
         {
             try
@@ -341,34 +355,29 @@ namespace DPGTProject.Forms
                 if (metadata == null || metadata.ForeignKey == null)
                     return false;
 
-                string overrideKey = $"{_tableName}.{columnName}";
-                string displayColumn = null;
-                if (SystemConfig.ForeignKeyDisplayColumnOverrides.TryGetValue(overrideKey, out var configuredDisplay) &&
-                    !string.IsNullOrWhiteSpace(configuredDisplay))
-                {
-                    displayColumn = configuredDisplay;
-                }
+                string displayColumn = ResolveLookupDisplayColumn(columnName, metadata);
 
-                if (string.IsNullOrWhiteSpace(displayColumn))
-                    displayColumn = metadata.LookupDisplayColumn;
-
-                var data = MSSQL.GetForeignKeyLookup(_tableName, columnName, displayColumn, null, null, null);
-                if (data == null || !data.Columns.Contains("Value"))
+                var lookupItems = MSSQL.GetForeignKeyLookupItems(_tableName, columnName, displayColumn, null, null, null);
+                if (lookupItems == null || lookupItems.Count == 0)
                     return false;
 
-                if (!data.Columns.Contains("DisplayWithId"))
-                    data.Columns.Add("DisplayWithId", typeof(string));
+                var data = new DataTable();
+                data.Columns.Add("Value", typeof(object));
+                data.Columns.Add("DisplayWithId", typeof(string));
 
-                foreach (DataRow row in data.Rows)
+                foreach (var item in lookupItems)
                 {
-                    string valueText = row["Value"] == DBNull.Value || row["Value"] == null
+                    string valueText = item?.Value == DBNull.Value || item?.Value == null
                         ? string.Empty
-                        : row["Value"].ToString();
-                    string displayText = data.Columns.Contains("Display") && row["Display"] != DBNull.Value && row["Display"] != null
-                        ? row["Display"].ToString()
-                        : valueText;
+                        : Convert.ToString(item.Value, CultureInfo.InvariantCulture);
+                    string displayText = string.IsNullOrWhiteSpace(item?.Display)
+                        ? valueText
+                        : item.Display;
 
-                    row["DisplayWithId"] = $"{displayText}[{valueText}]";
+                    var resultRow = data.NewRow();
+                    resultRow["Value"] = item.Value ?? (object)DBNull.Value;
+                    resultRow["DisplayWithId"] = FormatLookupDisplay(displayText, valueText);
+                    data.Rows.Add(resultRow);
                 }
 
                 var combo = new ComboBox
@@ -387,6 +396,117 @@ namespace DPGTProject.Forms
             {
                 return false;
             }
+        }
+
+        private static string FormatLookupDisplay(string displayText, string valueText)
+        {
+            if (string.IsNullOrWhiteSpace(displayText))
+                return valueText ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(valueText) ||
+                string.Equals(displayText, valueText, StringComparison.OrdinalIgnoreCase))
+            {
+                return displayText;
+            }
+
+            return $"{displayText} [{valueText}]";
+        }
+
+        private string ResolveLookupDisplayColumn(string columnName, TableEditColumnMetadata metadata)
+        {
+            if (metadata == null || metadata.ForeignKey == null)
+                return null;
+
+            string overrideKey = $"{_tableName}.{columnName}";
+            string displayColumn = null;
+
+            if (SystemConfig.ForeignKeyDisplayColumnOverrides.TryGetValue(overrideKey, out var configuredDisplay) &&
+                !string.IsNullOrWhiteSpace(configuredDisplay))
+            {
+                displayColumn = configuredDisplay;
+            }
+
+            if (string.IsNullOrWhiteSpace(displayColumn))
+                displayColumn = metadata.LookupDisplayColumn;
+
+            if (string.IsNullOrWhiteSpace(displayColumn))
+                displayColumn = MSSQL.ResolveDisplayColumn(metadata.ForeignKey.RefTable, metadata.ForeignKey.RefColumn);
+
+            return ResolveDisplayColumnFallback(metadata.ForeignKey.RefTable, metadata.ForeignKey.RefColumn, displayColumn);
+        }
+
+        private static string ResolveDisplayColumnFallback(string refTable, string refColumn, string selectedDisplayColumn)
+        {
+            if (string.IsNullOrWhiteSpace(refTable))
+                return selectedDisplayColumn;
+
+            try
+            {
+                var schema = Current.GetTableSchema(refTable);
+                if (schema == null || !schema.Columns.Contains("ColumnName"))
+                    return selectedDisplayColumn;
+
+                var availableColumns = schema.Rows.Cast<DataRow>()
+                    .Select(r => r["ColumnName"]?.ToString())
+                    .Where(c => !string.IsNullOrWhiteSpace(c))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (availableColumns.Count == 0)
+                    return selectedDisplayColumn;
+
+                if (IsUsableDisplayColumn(selectedDisplayColumn, refColumn, availableColumns))
+                    return availableColumns.First(c => string.Equals(c, selectedDisplayColumn, StringComparison.OrdinalIgnoreCase));
+
+                foreach (var candidate in PreferredDisplayColumns)
+                {
+                    if (IsUsableDisplayColumn(candidate, refColumn, availableColumns))
+                        return availableColumns.First(c => string.Equals(c, candidate, StringComparison.OrdinalIgnoreCase));
+                }
+
+                var keywordMatch = availableColumns.FirstOrDefault(c =>
+                    !string.Equals(c, refColumn, StringComparison.OrdinalIgnoreCase) &&
+                    ContainsDisplayKeyword(c));
+
+                if (!string.IsNullOrWhiteSpace(keywordMatch))
+                    return keywordMatch;
+
+                return availableColumns.FirstOrDefault(c =>
+                           !string.Equals(c, refColumn, StringComparison.OrdinalIgnoreCase))
+                       ?? selectedDisplayColumn;
+            }
+            catch
+            {
+                return selectedDisplayColumn;
+            }
+        }
+
+        private static bool IsUsableDisplayColumn(string columnName, string refColumn, List<string> availableColumns)
+        {
+            if (string.IsNullOrWhiteSpace(columnName) || availableColumns == null || availableColumns.Count == 0)
+                return false;
+
+            if (string.Equals(columnName, refColumn, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return availableColumns.Any(c => string.Equals(c, columnName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool ContainsDisplayKeyword(string columnName)
+        {
+            if (string.IsNullOrWhiteSpace(columnName))
+                return false;
+
+            string lower = columnName.ToLowerInvariant();
+            return lower.Contains("name") ||
+                   lower.Contains("title") ||
+                   lower.Contains("display") ||
+                   lower.Contains("caption") ||
+                   lower.Contains("label") ||
+                   lower.Contains("description") ||
+                   lower.Contains("code") ||
+                   lower.Contains("login") ||
+                   lower.Contains("email");
         }
 
         private void SetControlValue(Control control, object value)
