@@ -1,8 +1,7 @@
 ﻿using DPGTProject.Configs;
 using Scraps.Configs;
-using Scraps.Databases.Utilities;
+using Scraps.Database;
 using Scraps.Security;
-using MSSQL = Scraps.Databases.MSSQL;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -14,8 +13,9 @@ namespace DPGTProject
     {
         #region --- UserSpace ---
         #region --- Работа с базой данных ---
-        public static string databaseName = "SinaiDB";                                                                         // !!! ВВЕДИТЕ НАЗВАНИЕ БД, ЭТО НЕОБХОДИМО В ПЕРВУЮ ОЧЕРЕДЬ !!!
-        public static string connectionString = MSSQL.ConnectionStringBuilder(databaseName);                         // !!! ПОМЕНЯТЬ ОСНОВУ СТРОКИ МОЖНО В Database.cs МЕТОД: ConnectionStringBuilder !!!
+        public static DatabaseProvider databaseProvider = DatabaseProvider.MSSQL;                                           // Пока проект работает с MSSQL, оставлено для будущего расширения
+        public static string databaseName = "SinaiDB";                                                                       // Имя БД (для MSSQL)
+        public static string connectionString = "";                                                                           // Если пусто: для MSSQL будет собрана автоматически
         #endregion --- Работа с базой данных ---
 
         #region --- Дополнительные функции ---
@@ -38,7 +38,7 @@ namespace DPGTProject
         public static bool addRolesWhenRegistering = false;                                                             // Добавить выбор роли при регистрации
         #endregion +++ RegisterForm функции +++
         #region +++ Auth / схема БД +++
-        public static bool authHashPasswords = true;                                                                    // Хэшировать пароли при регистрации/авторизации
+        public static bool authHashPasswords = false;                                                                    // Хэшировать пароли при регистрации/авторизации
         public static DatabaseGenerationMode databaseGenerationMode = DatabaseGenerationMode.Simple;                    // Режим генерации БД: None/Simple/Standard/Full
         #endregion +++ Auth / схема БД +++
 
@@ -85,8 +85,7 @@ namespace DPGTProject
         #endregion --- Таблицы и автоопределение таблиц ---
 
         #region --- Цветовая тема и иконка ---
-        public static bool applyCustomThemes = true;                                                                    // Применять кастомные темы к окнам
-        public static DesignConfig.ApplicationTheme applicationTheme = DesignConfig.ApplicationTheme.SystemDefault;     // Указать цветовую палитру, если отключено applyCustomThemes, тема не будет применена
+        public static DesignConfig.ApplicationTheme applicationTheme = DesignConfig.ApplicationTheme.Custom;            // Тема приложения. Для Custom библиотека темы ничего не применяет.
         public static Icon Icon = File.Exists("icon.ico") ? new Icon("icon.ico") : null;                                // Иконка для всех форм, если добавляете иконку "нагло", как с new Icon(прописано по умолчанию), в свойствах необходимо указать "Всегда копировать"
                                                                                                                         // Пример через ресурсы: 
                                                                                                                         // Icon = Properties.Resources.AppIcon;
@@ -133,15 +132,6 @@ namespace DPGTProject
         #endregion --- UserSpace ---
         #region --- DevSpace ---
         // Системные настройки, здесь нет необходимости что-либо менять
-        public static string lastError = "";
-        // Системные настройки, здесь нет необходимости что-либо менять
         #endregion --- DevSpace ---
     }
 }
-
-
-
-
-
-
-

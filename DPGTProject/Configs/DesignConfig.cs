@@ -10,6 +10,7 @@ namespace DPGTProject.Configs
     {
         public enum ApplicationTheme
         {
+            Custom,
             SystemDefault,
             Light,
             Dark,
@@ -199,9 +200,10 @@ namespace DPGTProject.Configs
 
         public static void ApplyTheme(ApplicationTheme theme, IEnumerable<Control> controls = null)
         {
-            if (!SystemConfig.applyCustomThemes) { Console.WriteLine("Невозможно применить тему. Это отключено в настройках."); return; }
             switch (theme)
             {
+                case ApplicationTheme.Custom:
+                    return;
                 case ApplicationTheme.SystemDefault:
                     return;
                 case ApplicationTheme.Light:

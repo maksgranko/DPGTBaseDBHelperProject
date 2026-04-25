@@ -61,7 +61,6 @@ namespace DPGTProject
             }
             catch (Exception ex)
             {
-                SystemConfig.lastError = ex.Message;
                 MessageBox.Show("Не удалось выполнить вход. Обратитесь к администратору.", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }

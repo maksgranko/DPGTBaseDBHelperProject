@@ -7,7 +7,6 @@ using System.Linq;
 using System.Windows.Forms;
 using Scraps.Localization;
 using PermissionFlags = Scraps.Security.PermissionFlags;
-using ScrapsRoleManager = Scraps.Security.RoleManager;
 using Scraps.Security;
 
 namespace DPGTProject
@@ -24,7 +23,7 @@ namespace DPGTProject
             var filteredTables = SystemConfig.tables
                 .Where(t =>
                 {
-                    var permissions = ScrapsRoleManager.GetEffectivePermissions(UserSession.UserRole, t);
+                    var permissions = SystemConfig.GetEffectivePermissions(UserSession.UserRole, t);
                     return (permissions & (PermissionFlags.Import | PermissionFlags.Write)) ==
                            (PermissionFlags.Import | PermissionFlags.Write);
                 })
@@ -90,12 +89,22 @@ namespace DPGTProject
             try
             {
                 string tableName = TranslationManager.Untranslate(tableComboBox.Text);
-                DataImportService.ImportToTableSafe(
-                    tableName,
-                    _importData,
-                    roleName: UserSession.UserRole,
-                    required: PermissionFlags.Import | PermissionFlags.Write,
-                    allowTranslatedColumns: true);
+                var required = PermissionFlags.Import | PermissionFlags.Write;
+                if (!SystemConfig.HasPermission(UserSession.UserRole, tableName, required))
+                {
+                    MessageBox.Show("У вас нет прав на импорт в эту таблицу",
+                        "Ошибка прав", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                if (!DataImportService.ValidateImport(_importData, tableName, out var errors, allowTranslatedColumns: true))
+                {
+                    MessageBox.Show(string.Join("\n", errors),
+                        "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                DataImportService.ImportToTable(tableName, _importData);
 
                 MessageBox.Show("Данные успешно импортированы",
                     "Успешно", MessageBoxButtons.OK, MessageBoxIcon.Information);

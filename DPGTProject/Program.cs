@@ -1,10 +1,9 @@
 ﻿using DPGTProject.Configs;
 using Scraps.Configs;
-using Scraps.Databases;
-using Scraps.Databases.Utilities;
+using Scraps.Database;
 using Scraps.Localization;
 using Scraps.Security;
-using MSSQL = Scraps.Databases.MSSQL;
+using MSSQL = Scraps.Database.MSSQL.MSSQL;
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
@@ -31,6 +30,10 @@ namespace DPGTProject
 
         private static void ConfigureScraps()
         {
+            if (SystemConfig.databaseProvider != DatabaseProvider.MSSQL)
+                throw new NotSupportedException($"Провайдер '{SystemConfig.databaseProvider}' в этом проекте сейчас не поддержан. Используйте MSSQL.");
+
+            ScrapsConfig.DatabaseProvider = SystemConfig.databaseProvider;
             ScrapsConfig.DatabaseName = SystemConfig.databaseName;
             ScrapsConfig.ConnectionString = string.IsNullOrWhiteSpace(SystemConfig.connectionString)
                 ? MSSQL.ConnectionStringBuilder(SystemConfig.databaseName)
@@ -40,6 +43,8 @@ namespace DPGTProject
 
             ScrapsConfig.UseRoleIdMapping =
                 SystemConfig.databaseGenerationMode >= DatabaseGenerationMode.Standard;
+
+            DatabaseProviderFactory.Reset();
         }
 
         private static void EnsureDatabase()
@@ -51,6 +56,7 @@ namespace DPGTProject
             {
                 DatabaseName = SystemConfig.databaseName,
                 Mode = SystemConfig.databaseGenerationMode,
+                SeedRoles = SystemConfig.roles,
                 UsersTableName = ScrapsConfig.UsersTableName,
                 UsersTableColumnsNames = new Dictionary<string, string>(ScrapsConfig.UsersTableColumnsNames),
                 ApplyUsersMappingToScrapsConfig = true
@@ -62,28 +68,20 @@ namespace DPGTProject
 
         private static void InitializeSecurity()
         {
-            var roles = new List<Role>();
-            foreach (var roleEntry in SystemConfig.RolePermissions)
-            {
-                var role = new Role { Name = roleEntry.Key };
-                role.TablePermissions.AddRange(roleEntry.Value);
-                roles.Add(role);
-            }
-
-            // Scraps 0.15: fallback-права по роли применяются самим RoleManager.
-            RoleManager.Initialize(roles, SystemConfig.DefaultRolePermissions);
+            // Ролевая модель берется из SystemConfig и читается локальным резолвером прав.
+            // Для Standard/Full режима роли предварительно создаются через SeedRoles в EnsureDatabase().
         }
 
         private static void RegisterVirtualTables()
         {
-            VirtualTableRegistry.Clear();
+            Current.VirtualTables.Clear();
 
             foreach (var pair in SystemConfig.VirtualTableQueries ?? new Dictionary<string, string>())
             {
                 if (string.IsNullOrWhiteSpace(pair.Key) || string.IsNullOrWhiteSpace(pair.Value))
                     continue;
 
-                VirtualTableRegistry.Register(pair.Key, pair.Value);
+                Current.VirtualTables.Register(pair.Key, pair.Value);
             }
         }
 
@@ -102,9 +100,13 @@ namespace DPGTProject
 
                 try
                 {
-                    var schema = MSSQL.GetTableSchema(tableName);
-                    foreach (var columnName in schema.Keys)
+                    var schema = Current.GetTableSchema(tableName);
+                    foreach (System.Data.DataRow row in schema.Rows)
                     {
+                        var columnName = row["ColumnName"]?.ToString();
+                        if (string.IsNullOrWhiteSpace(columnName))
+                            continue;
+
                         if (SystemConfig.Translations.TryGetValue(columnName, out var translated))
                             merged[TranslationManager.ColumnKey(tableName, columnName)] = translated;
                     }

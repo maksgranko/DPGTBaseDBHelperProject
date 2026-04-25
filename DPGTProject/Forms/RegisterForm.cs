@@ -33,7 +33,6 @@ namespace DPGTProject
             }
             catch (Exception ex)
             {
-                SystemConfig.lastError = ex.Message;
                 MessageBox.Show("Не удалось проверить логин. Обратитесь к администратору.", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -67,7 +66,6 @@ namespace DPGTProject
             }
             catch (Exception ex)
             {
-                SystemConfig.lastError = ex.Message;
                 registered = false;
             }
 
@@ -84,7 +82,7 @@ namespace DPGTProject
             }
             else
             {
-                MessageBox.Show("Возникла ошибка при регистрации аккаунта!\nОшибка: " + SystemConfig.lastError, "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Возникла ошибка при регистрации аккаунта!", "Ошибка!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
         }

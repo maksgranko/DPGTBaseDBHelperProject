@@ -6,9 +6,8 @@ using System.Data;
 using System.Linq;
 using System.Windows.Forms;
 using Scraps.Localization;
-using Scraps.Databases;
 using PermissionFlags = Scraps.Security.PermissionFlags;
-using ScrapsRoleManager = Scraps.Security.RoleManager;
+using Scraps.Database.MSSQL;
 using Scraps.Security;
 
 namespace DPGTProject
@@ -59,7 +58,7 @@ namespace DPGTProject
             bool hasImportRight = false;
             foreach (var table in tables)
             {
-                var permissions = ScrapsRoleManager.GetEffectivePermissions(UserSession.UserRole, table);
+                var permissions = SystemConfig.GetEffectivePermissions(UserSession.UserRole, table);
                 if ((permissions & PermissionFlags.Read) == 0)
                     continue;
 
@@ -181,5 +180,4 @@ namespace DPGTProject
         }
     }
 }
-
 

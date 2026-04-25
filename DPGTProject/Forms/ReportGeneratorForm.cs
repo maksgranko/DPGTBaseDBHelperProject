@@ -1,5 +1,5 @@
 ﻿using DPGTProject.Configs;
-using MSSQL = Scraps.Databases.MSSQL;
+using MSSQL = Scraps.Database.MSSQL.MSSQL;
 using DPGTProject.Forms;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
@@ -11,7 +11,6 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using PermissionFlags = Scraps.Security.PermissionFlags;
-using ScrapsRoleManager = Scraps.Security.RoleManager;
 using Scraps.Localization;
 using Scraps.Security;
 
@@ -77,7 +76,7 @@ namespace DPGTProject
                 var filteredTables = SystemConfig.tables
                     .Where(t =>
                     {
-                        var permissions = ScrapsRoleManager.GetEffectivePermissions(UserSession.UserRole, t);
+                        var permissions = SystemConfig.GetEffectivePermissions(UserSession.UserRole, t);
                         return (permissions & (PermissionFlags.Read | PermissionFlags.Export)) ==
                                (PermissionFlags.Read | PermissionFlags.Export);
                     })

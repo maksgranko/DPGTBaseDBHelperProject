@@ -1,5 +1,5 @@
-﻿using DPGTProject.Configs;
-using MSSQL = Scraps.Databases.MSSQL;
+using DPGTProject.Configs;
+using MSSQL = Scraps.Database.MSSQL.MSSQL;
 using DPGTProject.Forms;
 using System;
 using System.Collections.Generic;
@@ -8,10 +8,8 @@ using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
 using PermissionFlags = Scraps.Security.PermissionFlags;
-using ScrapsRoleManager = Scraps.Security.RoleManager;
 using Scraps.Localization;
-using Scraps.Databases;
-using DataTableSearch = Scraps.Data.DataTables.Search;
+using Scraps.Database.MSSQL;
 using Scraps.Security;
 
 namespace DPGTProject
@@ -22,7 +20,6 @@ namespace DPGTProject
         private string _currentFilter;
         private DataTable _originalData;
         private DataTable _filteredData;
-        private DataTableSearch.MatchNavigator _searchNavigator;
         private string _lastSearchText = string.Empty;
         private readonly Dictionary<string, Dictionary<string, string>> _fkDisplayMap =
             new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
@@ -50,7 +47,7 @@ namespace DPGTProject
 
         private PermissionFlags GetCurrentPermissions()
         {
-            return ScrapsRoleManager.GetEffectivePermissions(UserSession.UserRole, _tableName ?? string.Empty);
+            return SystemConfig.GetEffectivePermissions(UserSession.UserRole, _tableName ?? string.Empty);
         }
 
         private bool HasCurrentPermission(PermissionFlags flag)
@@ -81,18 +78,7 @@ namespace DPGTProject
 
         private void DataGridView1_DataError(object sender, DataGridViewDataErrorEventArgs e)
         {
-            try
-            {
-                throw e.Exception;
-            }
-            catch (FormatException ex)
-            {
-                SystemConfig.lastError = ex.ToString();
-            }
-            catch
-            {
-                SystemConfig.lastError = "Неизвестная ошибка.";
-            }
+            _ = e?.Exception;
         }
 
         private void DataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
@@ -179,6 +165,8 @@ namespace DPGTProject
 
             try
             {
+                dataGridView1.EndEdit();
+                dataGridView1.CurrentCell = null;
                 var changedData = (DataTable)dataGridView1.DataSource;
                 var untranslated = TranslationManager.Untranslate(changedData, TableName);
 
@@ -248,7 +236,7 @@ namespace DPGTProject
 
         private void HandleSearch(bool isNext)
         {
-            var source = dataGridView1.DataSource as DataTable;
+            var source = _filteredData ?? _originalData;
             if (source == null)
                 return;
 
@@ -260,53 +248,88 @@ namespace DPGTProject
                 return;
             }
 
-            bool needRebuild = _searchNavigator == null ||
+            bool needRebuild = _searchMatches == null ||
                                !string.Equals(_lastSearchText, searchText, StringComparison.OrdinalIgnoreCase);
 
             if (needRebuild)
             {
-                _searchNavigator = DataTableSearch.CreateNavigator(source, searchText, ignoreCase: true);
+                var searchResults = SearchByDisplayValues(searchText);
+                if (searchResults.Count == 0)
+                {
+                    statusLabel.Text = "Ничего не найдено";
+                    return;
+                }
                 _lastSearchText = searchText;
+                _searchMatches = searchResults;
+                _currentSearchIndex = 0;
             }
 
-            if (_searchNavigator == null || _searchNavigator.Count == 0)
+            if (_searchMatches == null || _searchMatches.Count == 0)
             {
                 statusLabel.Text = "Ничего не найдено";
                 return;
             }
 
-            DataTableSearch.DataCellMatch match;
             if (needRebuild)
-                match = isNext ? _searchNavigator.First() : _searchNavigator.Last();
+                _currentSearchIndex = isNext ? 0 : _searchMatches.Count - 1;
             else
-                match = isNext ? _searchNavigator.Next(wrap: true) : _searchNavigator.Prev(wrap: true);
+                _currentSearchIndex = isNext ? (_currentSearchIndex + 1) % _searchMatches.Count
+                                          : (_currentSearchIndex - 1 + _searchMatches.Count) % _searchMatches.Count;
 
-            NavigateToResult(match);
-            statusLabel.Text = $"Найдено: {_searchNavigator.Count} (позиция {_searchNavigator.Index + 1})";
+            NavigateToResult(_searchMatches[_currentSearchIndex]);
+            statusLabel.Text = $"Найдено: {_searchMatches.Count} (позиция {_currentSearchIndex + 1})";
+        }
+
+        private List<DataGridViewCell> _searchMatches = new List<DataGridViewCell>();
+        private int _currentSearchIndex = -1;
+
+        private List<DataGridViewCell> SearchByDisplayValues(string searchText)
+        {
+            var results = new List<DataGridViewCell>();
+            if (dataGridView1.Rows.Count == 0)
+                return results;
+
+            string searchLower = searchText.Trim().ToLowerInvariant();
+
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (row.IsNewRow) continue;
+                foreach (DataGridViewCell cell in row.Cells)
+                {
+                    if (cell.OwningColumn.Name == "RowError") continue;
+                    try
+                    {
+                        string displayText = cell.FormattedValue?.ToString() ?? string.Empty;
+                        if (displayText.ToLowerInvariant().Contains(searchLower))
+                        {
+                            results.Add(cell);
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            return results;
         }
 
         private void FindNext_Click(object sender, EventArgs e) => HandleSearch(true);
 
         private void ResetSearchState()
         {
-            _searchNavigator = null;
+            _searchMatches = null;
             _lastSearchText = string.Empty;
         }
         private void FindPrevious_Click(object sender, EventArgs e) => HandleSearch(false);
 
-        private void NavigateToResult(DataTableSearch.DataCellMatch match)
+        private void NavigateToResult(DataGridViewCell cell)
         {
-            if (match == null || match.RowIndex < 0 || match.RowIndex >= dataGridView1.Rows.Count)
+            if (cell == null || cell.RowIndex < 0 || cell.RowIndex >= dataGridView1.Rows.Count)
                 return;
 
-            if (!dataGridView1.Columns.Contains(match.ColumnName))
-                return;
-
-            var targetCell = dataGridView1.Rows[match.RowIndex].Cells[match.ColumnName];
             dataGridView1.ClearSelection();
-            dataGridView1.CurrentCell = targetCell;
-            dataGridView1.Rows[match.RowIndex].Selected = true;
-            dataGridView1.FirstDisplayedScrollingRowIndex = match.RowIndex;
+            dataGridView1.CurrentCell = cell;
+            dataGridView1.Rows[cell.RowIndex].Selected = true;
+            dataGridView1.FirstDisplayedScrollingRowIndex = cell.RowIndex;
         }
 
         private void Filter_tb_KeyDown(object sender, KeyEventArgs e)
@@ -325,9 +348,15 @@ namespace DPGTProject
                     return;
 
                 _currentFilter = filterText ?? string.Empty;
-                _filteredData = string.IsNullOrWhiteSpace(_currentFilter)
-                    ? _originalData.Copy()
-                    : DataTableSearch.FilterRows(_originalData, _currentFilter, ignoreCase: true);
+
+                if (string.IsNullOrWhiteSpace(_currentFilter))
+                {
+                    _filteredData = _originalData.Copy();
+                }
+                else
+                {
+                    _filteredData = FilterWithSql(TableName, _currentFilter);
+                }
             }
             catch
             {
@@ -338,6 +367,103 @@ namespace DPGTProject
             ResetSearchState();
             dataGridView1.DataSource = TranslateForView(_filteredData);
             statusLabel.Text = $"Отфильтровано записей: {_filteredData.Rows.Count}";
+        }
+
+        private DataTable FilterWithSql(string tableName, string filterText)
+        {
+            var metadata = MSSQL.GetTableEditMetadata(tableName, null);
+            var fkColumns = metadata.Columns.Where(c => c.ForeignKey != null).ToList();
+
+            var filterParts = new List<string>();
+            var joinList = new List<string>();
+            var parameters = new List<System.Data.SqlClient.SqlParameter>();
+            int paramIndex = 0;
+            int aliasCounter = 0;
+            var fkAliasMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (DataColumn column in _originalData.Columns)
+            {
+                string condition = null;
+                var fk = fkColumns.FirstOrDefault(c => c.Column.Equals(column.ColumnName, StringComparison.OrdinalIgnoreCase));
+
+                if (fk != null)
+                {
+                    var fkTable = fk.ForeignKey.ReferenceTable;
+                    var fkReferencedColumn = fk.ForeignKey.ReferenceColumn;
+                    var displayCol = fk.LookupDisplayColumn ?? "name";
+
+                    string aliasKey = $"{fkTable}.{column.ColumnName}";
+                    string alias;
+                    if (!fkAliasMap.TryGetValue(aliasKey, out alias))
+                    {
+                        alias = $"t{aliasCounter++}";
+                        fkAliasMap[aliasKey] = alias;
+                        joinList.Add($"LEFT JOIN [{fkTable}] {alias} ON [{tableName}].[{column.ColumnName}] = {alias}.[{fkReferencedColumn}]");
+                    }
+
+                    string paramName = $"@p{paramIndex}";
+                    condition = $"{alias}.[{displayCol}] LIKE {paramName}";
+                    parameters.Add(new System.Data.SqlClient.SqlParameter(paramName, $"%{filterText}%"));
+                    paramIndex++;
+                }
+                else if (column.DataType == typeof(string))
+                {
+                    string paramName = $"@p{paramIndex}";
+                    condition = $"[{tableName}].[{column.ColumnName}] LIKE {paramName}";
+                    parameters.Add(new System.Data.SqlClient.SqlParameter(paramName, $"%{filterText}%"));
+                    paramIndex++;
+                }
+                else if (column.DataType == typeof(int) || column.DataType == typeof(decimal))
+                {
+                    if (int.TryParse(filterText, out _) || decimal.TryParse(filterText, out _))
+                    {
+                        string paramName = $"@p{paramIndex}";
+                        condition = $"[{tableName}].[{column.ColumnName}] = {paramName}";
+                        parameters.Add(new System.Data.SqlClient.SqlParameter(paramName, filterText));
+                        paramIndex++;
+                    }
+                }
+                else if (column.DataType == typeof(DateTime))
+                {
+                    if (DateTime.TryParse(filterText, out _))
+                    {
+                        string paramName = $"@p{paramIndex}";
+                        condition = $"[{tableName}].[{column.ColumnName}] = {paramName}";
+                        parameters.Add(new System.Data.SqlClient.SqlParameter(paramName, filterText));
+                        paramIndex++;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(condition))
+                    filterParts.Add(condition);
+            }
+
+            if (filterParts.Count == 0)
+                return _originalData.Copy();
+
+            string whereClause = string.Join(" OR ", filterParts);
+            string joinClause = string.Join(" ", joinList);
+            string sql = $"SELECT [{tableName}].* FROM [{tableName}] {joinClause} WHERE {whereClause}";
+
+            try
+            {
+                using (var conn = new System.Data.SqlClient.SqlConnection(DPGTProject.SystemConfig.connectionString))
+                {
+                    conn.Open();
+                    using (var cmd = new System.Data.SqlClient.SqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddRange(parameters.ToArray());
+                        var adapter = new System.Data.SqlClient.SqlDataAdapter(cmd);
+                        var dt = new DataTable();
+                        adapter.Fill(dt);
+                        return dt;
+                    }
+                }
+            }
+            catch
+            {
+                return _originalData.Copy();
+            }
         }
 
         private void exit_btn_Click(object sender, EventArgs e)
@@ -604,7 +730,4 @@ namespace DPGTProject
         }
     }
 }
-
-
-
 

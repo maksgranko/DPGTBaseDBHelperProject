@@ -18,7 +18,7 @@
 
 ```csharp
 public static string databaseName = "MyDatabase";
-public static string connectionString = MSSQL.ConnectionStringBuilder(databaseName);
+public static string connectionString = "";
 ```
 
 3. Оставьте на первый запуск:
@@ -54,7 +54,7 @@ public static DatabaseGenerationMode databaseGenerationMode = DatabaseGeneration
 
 ```csharp
 public static string databaseName = "MyDatabase";
-public static string connectionString = MSSQL.ConnectionStringBuilder(databaseName);
+public static string connectionString = "";
 ```
 
 Если используете свой SQL Server-инстанс, задайте строку подключения вручную.
@@ -209,8 +209,7 @@ public static bool exportRightInTables = false;
 Также можно настроить тему и иконку:
 
 ```csharp
-public static bool applyCustomThemes = true;
-public static DesignConfig.ApplicationTheme applicationTheme = DesignConfig.ApplicationTheme.SystemDefault;
+public static DesignConfig.ApplicationTheme applicationTheme = DesignConfig.ApplicationTheme.Custom;
 public static Icon Icon = File.Exists("icon.ico") ? new Icon("icon.ico") : null;
 ```
 

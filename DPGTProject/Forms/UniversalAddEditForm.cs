@@ -1,4 +1,5 @@
-﻿using MSSQL = Scraps.Databases.MSSQL;
+﻿using MSSQL = Scraps.Database.MSSQL.MSSQL;
+using Scraps.Database;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -22,8 +23,8 @@ namespace DPGTProject.Forms
         private Button _btnClose;
 
         private string _tableName;
-        private Dictionary<string, MSSQL.TableEditColumnMetadata> _metadataByColumn =
-            new Dictionary<string, MSSQL.TableEditColumnMetadata>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, TableEditColumnMetadata> _metadataByColumn =
+            new Dictionary<string, TableEditColumnMetadata>(StringComparer.OrdinalIgnoreCase);
 
         public UniversalAddEditForm(Dictionary<string, object> columnDefinitions, string tableName)
         {
@@ -106,7 +107,7 @@ namespace DPGTProject.Forms
             }
         }
 
-        private MSSQL.TableEditColumnMetadata GetColumnMetadata(string columnName)
+        private TableEditColumnMetadata GetColumnMetadata(string columnName)
         {
             if (string.IsNullOrWhiteSpace(columnName))
                 return null;
@@ -282,8 +283,7 @@ namespace DPGTProject.Forms
                 inputControl = new TextBox { Width = 150 };
             else
             {
-                SystemConfig.lastError = $"Неподдерживаемый тип для {columnName}";
-                throw new ArgumentException(SystemConfig.lastError);
+                throw new ArgumentException($"Неподдерживаемый тип для {columnName}");
             }
 
             if (IsNullableColumn(columnName))
@@ -659,5 +659,3 @@ namespace DPGTProject.Forms
         }
     }
 }
-
-

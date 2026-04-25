@@ -65,7 +65,7 @@
             this.role_lb.Name = "role_lb";
             this.role_lb.Size = new System.Drawing.Size(274, 23);
             this.role_lb.TabIndex = 9;
-            this.role_lb.Text = "Ваша роль: ";
+            this.role_lb.Text = "Роль: И это тоже в коде.";
             this.role_lb.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // hello_lb
@@ -73,14 +73,14 @@
             this.hello_lb.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.hello_lb.Location = new System.Drawing.Point(12, 9);
             this.hello_lb.Name = "hello_lb";
-            this.hello_lb.Size = new System.Drawing.Size(274, 23);
+            this.hello_lb.Size = new System.Drawing.Size(274, 40);
             this.hello_lb.TabIndex = 8;
-            this.hello_lb.Text = "Здравствуйте!";
+            this.hello_lb.Text = "Приветствие. Это редактируется в коде.";
             this.hello_lb.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
             // open_table_btn
             // 
-            this.open_table_btn.Location = new System.Drawing.Point(199, 35);
+            this.open_table_btn.Location = new System.Drawing.Point(199, 45);
             this.open_table_btn.Name = "open_table_btn";
             this.open_table_btn.Size = new System.Drawing.Size(87, 23);
             this.open_table_btn.TabIndex = 7;
@@ -89,7 +89,7 @@
             // 
             // export_btn
             // 
-            this.export_btn.Location = new System.Drawing.Point(12, 64);
+            this.export_btn.Location = new System.Drawing.Point(12, 74);
             this.export_btn.Name = "export_btn";
             this.export_btn.Size = new System.Drawing.Size(274, 23);
             this.export_btn.TabIndex = 12;
@@ -99,14 +99,14 @@
             // table_cb
             // 
             this.table_cb.FormattingEnabled = true;
-            this.table_cb.Location = new System.Drawing.Point(15, 35);
+            this.table_cb.Location = new System.Drawing.Point(15, 45);
             this.table_cb.Name = "table_cb";
             this.table_cb.Size = new System.Drawing.Size(167, 21);
             this.table_cb.TabIndex = 15;
             // 
             // import_btn
             // 
-            this.import_btn.Location = new System.Drawing.Point(12, 93);
+            this.import_btn.Location = new System.Drawing.Point(12, 103);
             this.import_btn.Name = "import_btn";
             this.import_btn.Size = new System.Drawing.Size(274, 23);
             this.import_btn.TabIndex = 17;
